@@ -62,7 +62,7 @@ export const useLogout = () => {
       localStorage.removeItem('user');
       localStorage.removeItem('currentWorkspaceId');
       queryClient.clear(); // Clear all cached queries upon logout
-      window.location.href = '/login';
+      window.location.href = '/';
     },
   });
 };

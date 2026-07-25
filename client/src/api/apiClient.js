@@ -91,9 +91,9 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('user');
         
         // Prevent redirect loop if already on a public page
-        const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/google-callback'];
+        const publicPaths = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/google-callback'];
         if (!publicPaths.includes(window.location.pathname)) {
-          window.location.href = '/login';
+          window.location.href = '/';
         }
         
         return Promise.reject(refreshError);

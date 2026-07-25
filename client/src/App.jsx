@@ -15,7 +15,10 @@ import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import GoogleCallback from "./pages/GoogleCallback";
+import CheckEmail from "./pages/CheckEmail";
 import { useSocketSync } from "./hooks/useSocketSync";
+
+import Landing from "./pages/Landing";
 
 const App = () => {
     useSocketSync();
@@ -25,10 +28,12 @@ const App = () => {
             <Routes>
                 {/* Public Auth Routes */}
                 <Route element={<PublicRoute />}>
+                    <Route path="/" element={<Landing />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/check-email" element={<CheckEmail />} />
                 </Route>
 
                 {/* Verification/Callback Routes */}
@@ -37,12 +42,12 @@ const App = () => {
 
                 {/* Gated Application Routes */}
                 <Route element={<ProtectedRoute />}>
-                    <Route path="/" element={<Layout />}>
-                        <Route index element={<Dashboard />} />
-                        <Route path="team" element={<Team />} />
-                        <Route path="projects" element={<Projects />} />
-                        <Route path="projectsDetail" element={<ProjectDetails />} />
-                        <Route path="taskDetails" element={<TaskDetails />} />
+                    <Route element={<Layout />}>
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/team" element={<Team />} />
+                        <Route path="/projects" element={<Projects />} />
+                        <Route path="/projectsDetail" element={<ProjectDetails />} />
+                        <Route path="/taskDetails" element={<TaskDetails />} />
                     </Route>
                 </Route>
             </Routes>

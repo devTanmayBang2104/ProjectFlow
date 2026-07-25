@@ -1,16 +1,34 @@
 import { useMemo } from "react";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { useSelector } from "react-redux";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip, CartesianGrid, Legend } from "recharts";
 import { CheckCircle, Clock, AlertTriangle, Users, ArrowRightIcon } from "lucide-react";
 
 // Colors for charts and priorities
-const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+const COLORS = ["#8b5cf6", "#ec4899", "#06b6d4", "#eab308", "#64748b"];
+const STATUS_COLORS = {
+    "TODO": "#94a3b8",       // Slate
+    "IN PROGRESS": "#6366f1", // Indigo
+    "DONE": "#10b981"        // Emerald
+};
 const PRIORITY_COLORS = {
-    LOW: "text-red-600 bg-red-200 dark:text-red-500 dark:bg-red-600",
+    LOW: "text-emerald-600 bg-emerald-200 dark:text-emerald-500 dark:bg-emerald-600",
     MEDIUM: "text-blue-600 bg-blue-200 dark:text-blue-500 dark:bg-blue-600",
-    HIGH: "text-emerald-600 bg-emerald-200 dark:text-emerald-500 dark:bg-emerald-600",
+    HIGH: "text-red-600 bg-red-200 dark:text-red-500 dark:bg-red-600",
+};
+
+const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-lg shadow-lg text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                <p className="label">{`${payload[0].name}: ${payload[0].value} Tasks`}</p>
+            </div>
+        );
+    }
+    return null;
 };
 
 const ProjectAnalytics = ({ project, tasks }) => {
+    const { theme } = useSelector((state) => state.theme);
     const { stats, statusData, typeData, priorityData } = useMemo(() => {
         const now = new Date();
         const total = tasks.length;
@@ -109,15 +127,25 @@ const ProjectAnalytics = ({ project, tasks }) => {
                 <div className="not-dark:bg-white dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-300 dark:border-zinc-800 rounded-lg p-6">
                     <h2 className="text-zinc-900 dark:text-white mb-4 font-medium">Tasks by Status</h2>
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={statusData}>
+                        <BarChart data={statusData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === "light" ? "#f4f4f5" : "#27272a"} />
                             <XAxis
                                 dataKey="name"
-                                tick={{ fill: "#52525b", fontSize: 12 }}
-                                axisLine={{ stroke: "#d4d4d8" }}
-                                dark={{ stroke: "#27272a" }}
+                                tick={{ fill: "#71717a", fontSize: 11, fontWeight: 500 }}
+                                axisLine={false}
+                                tickLine={false}
                             />
-                            <YAxis tick={{ fill: "#52525b", fontSize: 12 }} axisLine={{ stroke: "#d4d4d8" }} />
-                            <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                            <YAxis 
+                                tick={{ fill: "#71717a", fontSize: 11, fontWeight: 500 }} 
+                                axisLine={false}
+                                tickLine={false}
+                            />
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: theme === "light" ? "#f4f4f5" : "#18181b", opacity: 0.4 }} />
+                            <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={45}>
+                                {statusData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || "#3b82f6"} />
+                                ))}
+                            </Bar>
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
@@ -132,14 +160,23 @@ const ProjectAnalytics = ({ project, tasks }) => {
                                 dataKey="value"
                                 nameKey="name"
                                 cx="50%"
-                                cy="50%"
-                                outerRadius={100}
-                                label={({ name, value }) => `${name}: ${value}`}
+                                cy="45%"
+                                innerRadius={60}
+                                outerRadius={95}
+                                paddingAngle={3}
                             >
                                 {typeData.map((_, i) => (
                                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                                 ))}
                             </Pie>
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend 
+                                verticalAlign="bottom" 
+                                height={36} 
+                                iconType="circle"
+                                iconSize={8}
+                                wrapperStyle={{ fontSize: 12, fontWeight: 500, color: "#71717a" }}
+                            />
                         </PieChart>
                     </ResponsiveContainer>
                 </div>

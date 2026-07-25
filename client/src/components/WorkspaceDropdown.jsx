@@ -29,7 +29,7 @@ function WorkspaceDropdown() {
     const onSelectWorkspace = (id) => {
         dispatch(setActiveWorkspaceId(id));
         setIsOpen(false);
-        navigate('/');
+        navigate('/dashboard');
     };
 
     const handleCreateWorkspaceClick = () => {

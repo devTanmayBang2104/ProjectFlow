@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useLogin } from '../hooks/useAuth';
+import { useLogin, useResendVerification } from '../hooks/useAuth';
 import { toast } from 'react-hot-toast';
 import apiClient from '../api/apiClient';
+import { Kanban } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showResend, setShowResend] = useState(false);
   const loginMutation = useLogin();
+  const resendMutation = useResendVerification();
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
@@ -22,9 +25,12 @@ const Login = () => {
       {
         onSuccess: () => {
           toast.success('Logged in successfully!');
-          navigate('/');
+          navigate('/dashboard');
         },
         onError: (err) => {
+          if (err.response?.status === 403) {
+            setShowResend(true);
+          }
           const errMsg = err.response?.data?.error?.message || 'Login failed. Please check your credentials.';
           toast.error(errMsg);
         },
@@ -51,8 +57,8 @@ const Login = () => {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-slate-900 transition-colors duration-200">
       <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-800">
         <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/20 font-bold text-xl">
-            L
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/20">
+            <Kanban className="size-6" />
           </div>
           <h2 className="mt-6 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             Welcome back
@@ -76,7 +82,10 @@ const Login = () => {
                 className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setShowResend(false);
+                }}
               />
             </div>
 
@@ -100,12 +109,15 @@ const Login = () => {
                 className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setShowResend(false);
+                }}
               />
             </div>
           </div>
 
-          <div>
+          <div className="space-y-4">
             <button
               type="submit"
               disabled={loginMutation.isPending}
@@ -113,6 +125,34 @@ const Login = () => {
             >
               {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
             </button>
+
+            {showResend && (
+              <div className="rounded-lg bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 mt-2 animate-in fade-in duration-200 text-center">
+                <p className="font-semibold mb-1 text-xs">Email address not verified</p>
+                <p className="mb-3 text-[11px] text-slate-650 dark:text-zinc-400 leading-relaxed">
+                  Please click the link in your inbox. Need a new verification link?
+                </p>
+                <button
+                  type="button"
+                  disabled={resendMutation.isPending}
+                  onClick={() => {
+                    resendMutation.mutate(email, {
+                      onSuccess: () => {
+                        toast.success('A new verification email has been sent!');
+                        setShowResend(false);
+                      },
+                      onError: (resendErr) => {
+                        const resendMsg = resendErr.response?.data?.error?.message || 'Failed to resend email. Please try again.';
+                        toast.error(resendMsg);
+                      }
+                    });
+                  }}
+                  className="w-full py-1.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded text-xs font-semibold shadow transition-colors cursor-pointer"
+                >
+                  {resendMutation.isPending ? 'Sending...' : 'Resend Verification Link'}
+                </button>
+              </div>
+            )}
           </div>
         </form>
 

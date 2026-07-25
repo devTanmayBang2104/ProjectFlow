@@ -14,9 +14,9 @@ const typeIcons = {
 };
 
 const priorityTexts = {
-    LOW: { background: "bg-red-100 dark:bg-red-955", prioritycolor: "text-red-600 dark:text-red-400" },
+    LOW: { background: "bg-emerald-100 dark:bg-emerald-955", prioritycolor: "text-emerald-600 dark:text-emerald-400" },
     MEDIUM: { background: "bg-blue-100 dark:bg-blue-955", prioritycolor: "text-blue-600 dark:text-blue-400" },
-    HIGH: { background: "bg-emerald-100 dark:bg-emerald-955", prioritycolor: "text-emerald-600 dark:text-emerald-400" },
+    HIGH: { background: "bg-red-100 dark:bg-red-955", prioritycolor: "text-red-600 dark:text-red-400" },
 };
 
 const ProjectTasks = ({ tasks }) => {

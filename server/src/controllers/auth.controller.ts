@@ -238,7 +238,7 @@ export class AuthController {
         `&scope=${encodeURIComponent(scope)}` +
         `&state=${state}` +
         `&access_type=offline` +
-        `&prompt=consent`;
+        `&prompt=select_account`;
         
       res.status(200).json({
         success: true,

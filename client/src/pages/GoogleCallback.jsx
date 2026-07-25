@@ -35,7 +35,7 @@ const GoogleCallback = () => {
         queryClient.invalidateQueries({ queryKey: ['workspaces'] });
 
         toast.success('Logged in with Google successfully!');
-        navigate('/');
+        navigate('/dashboard');
       } catch (err) {
         console.error('[Google Callback Error] Failed to complete login:', err);
         const errMsg = err.response?.data?.error?.message || 'Google authentication failed.';

@@ -7,9 +7,18 @@ const SMTP_PASS = process.env.SMTP_PASS;
 const SMTP_FROM = process.env.SMTP_FROM || 'noreply@projectmanagement.com';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-// Create SMTP transport (only if config exists, otherwise log to console in dev)
+// Helper to log links directly to the console during development/SMTP failure
+const logDevEmailBackup = (email: string, url: string, type: string) => {
+  console.log('\n==================================================');
+  console.log(`[DEV EMAIL BACKUP] ${type} link for ${email}:`);
+  console.log(url);
+  console.log('==================================================\n');
+};
+
+// Create SMTP transport (only if config exists and isn't placeholder, otherwise console log in dev)
 const getTransporter = () => {
-  if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+  const isPlaceholder = SMTP_USER && SMTP_USER.includes('your_smtp_username_here');
+  if (SMTP_HOST && SMTP_USER && SMTP_PASS && !isPlaceholder) {
     return nodemailer.createTransport({
       host: SMTP_HOST,
       port: SMTP_PORT,
@@ -33,8 +42,8 @@ export const sendVerificationEmail = async (email: string, name: string, token: 
   const subject = 'Verify your email address';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e4e4e7; border-radius: 8px;">
-      <h2 style="color: #0f172a;">Welcome to LaunchPad CRM, ${name}!</h2>
-      <p style="color: #475569; font-size: 16px; line-height: 1.5;">Thank you for registering. Please click the button below to verify your email address and active your account:</p>
+      <h2 style="color: #0f172a;">Welcome to ProjectFlow, ${name}!</h2>
+      <p style="color: #475569; font-size: 16px; line-height: 1.5;">Thank you for registering. Please click the button below to verify your email address and activate your account:</p>
       <div style="margin: 30px 0; text-align: center;">
         <a href="${verifyUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Verify Email Address</a>
       </div>
@@ -44,18 +53,20 @@ export const sendVerificationEmail = async (email: string, name: string, token: 
   `;
 
   if (transporter) {
-    await transporter.sendMail({
-      from: SMTP_FROM,
-      to: email,
-      subject,
-      html,
-    });
-    console.log(`[Email] Verification email sent to ${email}`);
+    try {
+      await transporter.sendMail({
+        from: SMTP_FROM,
+        to: email,
+        subject,
+        html,
+      });
+      console.log(`[Email] Verification email sent to ${email}`);
+    } catch (err) {
+      console.error(`[Email SMTP Error] Failed to send verification mail to ${email}:`, err);
+      logDevEmailBackup(email, verifyUrl, 'Verification');
+    }
   } else {
-    console.log('\n==================================================');
-    console.log(`[DEV EMAIL BACKUP] Verification link for ${email}:`);
-    console.log(verifyUrl);
-    console.log('==================================================\n');
+    logDevEmailBackup(email, verifyUrl, 'Verification');
   }
 };
 
@@ -80,17 +91,19 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
   `;
 
   if (transporter) {
-    await transporter.sendMail({
-      from: SMTP_FROM,
-      to: email,
-      subject,
-      html,
-    });
-    console.log(`[Email] Password reset email sent to ${email}`);
+    try {
+      await transporter.sendMail({
+        from: SMTP_FROM,
+        to: email,
+        subject,
+        html,
+      });
+      console.log(`[Email] Password reset email sent to ${email}`);
+    } catch (err) {
+      console.error(`[Email SMTP Error] Failed to send password reset mail to ${email}:`, err);
+      logDevEmailBackup(email, resetUrl, 'Password Reset');
+    }
   } else {
-    console.log('\n==================================================');
-    console.log(`[DEV EMAIL BACKUP] Password reset link for ${email}:`);
-    console.log(resetUrl);
-    console.log('==================================================\n');
+    logDevEmailBackup(email, resetUrl, 'Password Reset');
   }
 };

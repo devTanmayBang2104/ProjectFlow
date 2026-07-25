@@ -12,7 +12,8 @@ import {
   BadRequestError, 
   ConflictError, 
   UnauthorizedError, 
-  NotFoundError 
+  NotFoundError,
+  ForbiddenError
 } from '../utils/errors';
 import { sendVerificationEmail, sendPasswordResetEmail } from './mail.service';
 
@@ -105,6 +106,11 @@ export class AuthService {
       });
 
       throw new UnauthorizedError('Invalid email or password.');
+    }
+
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      throw new ForbiddenError('Your email address has not been verified. Please check your inbox or request a new verification link.');
     }
 
     // Success: Reset login attempts and lockout
@@ -232,12 +238,15 @@ export class AuthService {
     const user = await prisma.user.findFirst({
       where: {
         verificationToken: token,
-        verificationTokenExpires: { gt: new Date() },
       }
     });
 
     if (!user) {
-      throw new BadRequestError('Invalid or expired email verification token.');
+      throw new BadRequestError('Invalid email verification link.');
+    }
+
+    if (user.verificationTokenExpires && user.verificationTokenExpires < new Date()) {
+      throw new BadRequestError('Verification link expired');
     }
 
     await prisma.user.update({
@@ -274,7 +283,11 @@ export class AuthService {
       }
     });
 
-    await sendVerificationEmail(user.email, user.name, verificationToken);
+    try {
+      await sendVerificationEmail(user.email, user.name, verificationToken);
+    } catch (err) {
+      console.error('[Mail Error] Failed to send verification email on resend:', err);
+    }
   }
 
   /**
@@ -297,7 +310,11 @@ export class AuthService {
       }
     });
 
-    await sendPasswordResetEmail(user.email, user.name, resetPasswordToken);
+    try {
+      await sendPasswordResetEmail(user.email, user.name, resetPasswordToken);
+    } catch (err) {
+      console.error('[Mail Error] Failed to send password reset email:', err);
+    }
   }
 
   /**

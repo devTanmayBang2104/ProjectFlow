@@ -26,7 +26,7 @@ export const useSocketSync = () => {
     // Listen to real-time events from server
     
     // 1. Personal Notification Received
-    socket.on('notification_received', (notification) => {
+    socket.on('notification:new', (notification) => {
       toast(notification.message || 'New notification received', {
         icon: '🔔',
         duration: 4000,
@@ -35,39 +35,34 @@ export const useSocketSync = () => {
     });
 
     // 2. Activity Log Added
-    socket.on('activity_logged', (log) => {
+    socket.on('activity:new', (log) => {
       if (log.workspaceId === activeWorkspaceId) {
         queryClient.invalidateQueries({ queryKey: ['workspace', activeWorkspaceId, 'activities'] });
       }
     });
 
-    // 3. Task Created
-    socket.on('task_created', (task) => {
-      queryClient.invalidateQueries({ queryKey: ['project', task.projectId] });
-      queryClient.invalidateQueries({ queryKey: ['workspace', activeWorkspaceId] });
-    });
-
-    // 4. Task Updated
-    socket.on('task_updated', (task) => {
-      queryClient.invalidateQueries({ queryKey: ['task', task.id] });
-      queryClient.invalidateQueries({ queryKey: ['project', task.projectId] });
-      queryClient.invalidateQueries({ queryKey: ['workspace', activeWorkspaceId] });
-    });
-
-    // 5. Task Deleted
-    socket.on('task_deleted', ({ taskId, projectId }) => {
+    // 3. Task Created, Updated, or Deleted
+    socket.on('task:changed', ({ taskId, action, taskData }) => {
+      // Invalidate the specific task query
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-      queryClient.invalidateQueries({ queryKey: ['workspace', activeWorkspaceId] });
+      
+      // Invalidate the project query if a projectId is provided in the task details
+      const projectId = taskData?.projectId || taskData?.project?.id;
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      }
+      
+      // Invalidate the active workspace data to refresh kanban/lists
+      if (activeWorkspaceId) {
+        queryClient.invalidateQueries({ queryKey: ['workspace', activeWorkspaceId] });
+      }
     });
 
     // Cleanup listeners on unmount or dependency change
     return () => {
-      socket.off('notification_received');
-      socket.off('activity_logged');
-      socket.off('task_created');
-      socket.off('task_updated');
-      socket.off('task_deleted');
+      socket.off('notification:new');
+      socket.off('activity:new');
+      socket.off('task:changed');
     };
   }, [user, activeWorkspaceId, queryClient]);
 };

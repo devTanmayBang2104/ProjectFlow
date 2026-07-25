@@ -10,6 +10,12 @@ const typeColors = {
     OTHER: "bg-amber-200 text-amber-800 dark:bg-amber-500 dark:text-amber-900",
 };
 
+const statusColors = {
+    TODO: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700",
+    IN_PROGRESS: "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50",
+    DONE: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50",
+};
+
 const priorityBorders = {
     LOW: "border-zinc-300 dark:border-zinc-600",
     MEDIUM: "border-amber-300 dark:border-amber-500",
@@ -102,11 +108,18 @@ const ProjectCalendar = ({ tasks }) => {
                                     key={task.id}
                                     className={`bg-zinc-50 dark:bg-zinc-800/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition p-4 rounded border-l-4 ${priorityBorders[task.priority]}`}
                                 >
-                                    <div className="flex justify-between mb-2">
-                                        <h4 className="text-zinc-900 dark:text-white font-medium">{task.title}</h4>
-                                        <span className={`px-2 py-0.5 rounded text-xs ${typeColors[task.type]}`}>
-                                            {task.type}
-                                        </span>
+                                    <div className="flex justify-between items-start gap-4 mb-2">
+                                        <h4 className={`text-zinc-900 dark:text-white font-medium ${task.status === "DONE" ? "line-through text-zinc-400 dark:text-zinc-500" : ""}`}>
+                                            {task.title}
+                                        </h4>
+                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase ${statusColors[task.status] || ""}`}>
+                                                {task.status.replace("_", " ")}
+                                            </span>
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase ${typeColors[task.type] || ""}`}>
+                                                {task.type}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-400">
                                         <span className="capitalize">{task.priority.toLowerCase()} priority</span>

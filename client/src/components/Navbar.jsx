@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SearchIcon, PanelLeft, MoonIcon, SunIcon, LogOut, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Kanban, SearchIcon, PanelLeft, MoonIcon, SunIcon, LogOut, Settings } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleTheme } from '../features/themeSlice';
 import { openModal } from '../features/uiSlice';
@@ -41,9 +42,19 @@ const Navbar = ({ setIsSidebarOpen }) => {
                 {/* Left section */}
                 <div className="flex items-center gap-4 min-w-0 flex-1">
                     {/* Sidebar Trigger */}
-                    <button onClick={() => setIsSidebarOpen((prev) => !prev)} className="sm:hidden p-2 rounded-lg transition-colors text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-800" >
+                    <button onClick={() => setIsSidebarOpen((prev) => !prev)} className="sm:hidden p-2 rounded-lg transition-colors text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 flex-shrink-0" >
                         <PanelLeft size={20} />
                     </button>
+
+                    {/* ProjectFlow Logo */}
+                    <Link to="/dashboard" className="flex items-center gap-2 mr-2 flex-shrink-0 select-none cursor-pointer">
+                        <div className="p-1.5 bg-blue-600 rounded-lg text-white shadow-md shadow-blue-500/10">
+                            <Kanban className="size-4" />
+                        </div>
+                        <span className="text-base font-bold tracking-tight text-zinc-900 dark:text-white max-sm:hidden">
+                            ProjectFlow
+                        </span>
+                    </Link>
 
                     {/* Search Input */}
                     <div className="relative flex-1 max-w-sm">
