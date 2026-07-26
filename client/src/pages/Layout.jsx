@@ -7,6 +7,7 @@ import { loadTheme } from '../features/themeSlice'
 import { Loader2Icon } from 'lucide-react'
 import CreateWorkspaceDialog from '../components/CreateWorkspaceDialog'
 import UserSettingsDialog from '../components/UserSettingsDialog'
+import WorkspaceSettingsDialog from '../components/WorkspaceSettingsDialog'
 
 const Layout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -29,6 +30,7 @@ const Layout = () => {
             {/* Modal Dialogs */}
             <CreateWorkspaceDialog />
             <UserSettingsDialog />
+            <WorkspaceSettingsDialog />
         </div>
     )
 }

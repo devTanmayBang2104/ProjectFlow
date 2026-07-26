@@ -155,6 +155,13 @@ const TaskDetails = () => {
     const subtasks = task.subtasks || [];
     const attachments = task.attachments || [];
 
+    const isTeamLead = project?.team_lead === user?.id;
+    const isWorkspaceOwner = project?.workspace?.ownerId === user?.id;
+    const isWorkspaceAdmin = project?.workspace?.members?.some(
+        (m) => m.userId === user?.id && m.role === "ADMIN"
+    );
+    const hasChecklistPermission = isTeamLead || isWorkspaceOwner || isWorkspaceAdmin;
+
     return (
         <div className="flex flex-col-reverse lg:flex-row gap-6 sm:p-4 text-gray-900 dark:text-zinc-100 max-w-6xl mx-auto">
             {/* Left: Comments & Checklist */}
@@ -177,13 +184,15 @@ const TaskDetails = () => {
                                             onChange={() => handleToggleSubtask(st.id, st.title, st.isCompleted)}
                                             className="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         />
-                                        <span className={`text-sm ${st.isCompleted ? 'line-through text-slate-400 dark:text-zinc-500' : 'text-slate-800 dark:text-zinc-250'}`}>
+                                        <span className={`text-sm ${st.isCompleted ? 'line-through text-slate-400 dark:text-zinc-500' : 'text-slate-800 dark:text-zinc-200'}`}>
                                             {st.title}
                                         </span>
                                     </div>
-                                    <button onClick={() => handleDeleteSubtask(st.id)} className="text-slate-400 hover:text-red-500 transition-colors">
-                                        <Trash2 className="size-3.5" />
-                                    </button>
+                                    {hasChecklistPermission && (
+                                        <button onClick={() => handleDeleteSubtask(st.id)} className="text-slate-400 hover:text-red-500 transition-colors">
+                                            <Trash2 className="size-3.5" />
+                                        </button>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -191,18 +200,20 @@ const TaskDetails = () => {
                         <p className="text-sm text-slate-500 dark:text-zinc-500 mb-4">No checklist subtasks added yet.</p>
                     )}
 
-                    <form onSubmit={handleAddSubtask} className="flex gap-2">
-                        <input 
-                            type="text" 
-                            placeholder="Add subtask..."
-                            value={newSubtask}
-                            onChange={(e) => setNewSubtask(e.target.value)}
-                            className="flex-1 bg-zinc-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded p-2 text-sm text-gray-900 dark:text-zinc-200 focus:outline-none"
-                        />
-                        <button type="submit" className="px-3.5 py-2 bg-zinc-800 text-white rounded text-sm font-medium hover:bg-zinc-700 dark:bg-zinc-700 dark:hover:bg-zinc-650 flex items-center gap-1.5 cursor-pointer">
-                            <Plus className="size-4" /> Add
-                        </button>
-                    </form>
+                    {hasChecklistPermission && (
+                        <form onSubmit={handleAddSubtask} className="flex gap-2">
+                            <input 
+                                type="text" 
+                                placeholder="Add subtask..."
+                                value={newSubtask}
+                                onChange={(e) => setNewSubtask(e.target.value)}
+                                className="flex-1 bg-zinc-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded p-2 text-sm text-gray-900 dark:text-zinc-200 focus:outline-none"
+                            />
+                            <button type="submit" className="px-3.5 py-2 bg-zinc-800 text-white rounded text-sm font-medium hover:bg-zinc-700 dark:bg-zinc-700 dark:hover:bg-zinc-600 flex items-center gap-1.5 cursor-pointer">
+                                <Plus className="size-4" /> Add
+                            </button>
+                        </form>
+                    )}
                 </div>
 
                 {/* Discussion Chatbox */}
@@ -226,7 +237,7 @@ const TaskDetails = () => {
                                                 className="size-5 rounded-full object-cover" 
                                             />
                                             <span className="font-semibold text-slate-800 dark:text-zinc-200">{comment.user?.name}</span>
-                                            <span className="text-[10px] text-slate-400 dark:text-zinc-650">
+                                            <span className="text-[10px] text-slate-400 dark:text-zinc-500">
                                                 • {format(new Date(comment.createdAt), "dd MMM, HH:mm")}
                                             </span>
                                         </div>
@@ -236,7 +247,7 @@ const TaskDetails = () => {
                                             </button>
                                         )}
                                     </div>
-                                    <p className="text-sm text-slate-800 dark:text-zinc-250 leading-relaxed whitespace-pre-line">{comment.content}</p>
+                                    <p className="text-sm text-slate-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line">{comment.content}</p>
                                 </div>
                             ))
                         ) : (

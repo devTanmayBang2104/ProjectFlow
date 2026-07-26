@@ -118,7 +118,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
     if (isLoading) {
         return (
             <div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur flex items-center justify-center text-left z-50 p-4">
-                <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 w-full max-w-md text-zinc-900 dark:text-zinc-250 flex flex-col items-center justify-center min-h-[220px] shadow-2xl">
+                <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 w-full max-w-md text-zinc-900 dark:text-zinc-300 flex flex-col items-center justify-center min-h-[220px] shadow-2xl">
                     <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mb-4"></div>
                     <p className="text-xs font-semibold text-zinc-550 dark:text-zinc-400">Loading workspace details...</p>
                 </div>
@@ -132,7 +132,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
             <div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur flex items-center justify-center text-left z-50 p-4">
                 <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 w-full max-w-md text-zinc-900 dark:text-zinc-200 relative shadow-2xl text-center">
                     <button 
-                        className="absolute top-3 right-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-250 cursor-pointer" 
+                        className="absolute top-3 right-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer" 
                         onClick={() => setIsDialogOpen(false)} 
                     >
                         <XIcon className="size-5" />
@@ -180,7 +180,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
         <div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur flex items-center justify-center text-left z-50 p-4 overflow-y-auto">
             <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 w-full max-w-lg text-zinc-900 dark:text-zinc-200 relative shadow-2xl my-8">
                 <button 
-                    className="absolute top-3 right-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-250 cursor-pointer" 
+                    className="absolute top-3 right-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer" 
                     onClick={() => setIsDialogOpen(false)} 
                 >
                     <XIcon className="size-5" />
@@ -202,7 +202,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                             value={formData.name} 
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
                             placeholder="Enter project name" 
-                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             required 
                         />
                     </div>
@@ -214,7 +214,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                             value={formData.description} 
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
                             placeholder="Describe your project" 
-                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 mt-1 text-zinc-900 dark:text-zinc-200 text-sm h-16 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 mt-1 text-zinc-900 dark:text-zinc-200 text-sm h-16 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500" 
                         />
                     </div>
 
@@ -225,7 +225,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                             <select 
                                 value={formData.status} 
                                 onChange={(e) => setFormData({ ...formData, status: e.target.value })} 
-                                className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             >
                                 <option value="PLANNING">Planning</option>
                                 <option value="ACTIVE">Active</option>
@@ -240,7 +240,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                             <select 
                                 value={formData.priority} 
                                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })} 
-                                className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             >
                                 <option value="LOW">Low</option>
                                 <option value="MEDIUM">Medium</option>
@@ -257,7 +257,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                                 type="date" 
                                 value={formData.start_date} 
                                 onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} 
-                                className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             />
                         </div>
                         <div>
@@ -267,7 +267,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                                 value={formData.end_date} 
                                 onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} 
                                 min={formData.start_date} 
-                                className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             />
                         </div>
                     </div>
@@ -278,7 +278,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                         <select 
                             value={formData.team_lead} 
                             onChange={(e) => setFormData({ ...formData, team_lead: e.target.value })} 
-                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                         >
                             <option value="">Select Project Lead</option>
                             {currentWorkspace?.members?.map((member) => (
@@ -293,7 +293,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                     <div>
                         <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Team Members</label>
                         <select 
-                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                             onChange={(e) => handleAddMember(e.target.value)}
                             value=""
                         >
@@ -336,7 +336,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                         <button 
                             type="button" 
                             onClick={() => setIsDialogOpen(false)} 
-                            className="px-4 py-2 rounded border border-zinc-300 dark:border-zinc-750 text-zinc-900 dark:text-zinc-255 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer text-xs font-semibold" 
+                            className="px-4 py-2 rounded border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer text-xs font-semibold" 
                         >
                             Cancel
                         </button>

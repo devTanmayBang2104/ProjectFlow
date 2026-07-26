@@ -15,6 +15,30 @@ const CreateWorkspaceDialog = () => {
         slug: '',
         description: '',
     });
+    const [logo, setLogo] = useState(null);
+    const [logoPreview, setLogoPreview] = useState('');
+
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+            if (!allowedTypes.includes(file.type)) {
+                toast.error('Only PNG, JPG, and JPEG images are allowed.');
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                toast.error('Logo image size cannot exceed 2 MB.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogo(reader.result);
+                setLogoPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleNameChange = (e) => {
         const name = e.target.value;
@@ -51,6 +75,7 @@ const CreateWorkspaceDialog = () => {
                 name: formData.name,
                 slug: formData.slug,
                 description: formData.description || undefined,
+                imageUrl: logo || undefined,
             });
 
             toast.dismissAll();
@@ -66,6 +91,8 @@ const CreateWorkspaceDialog = () => {
                 slug: '',
                 description: '',
             });
+            setLogo(null);
+            setLogoPreview('');
         } catch (err) {
             toast.dismissAll();
             const errMsg = err.response?.data?.error?.message || err.message || 'Failed to create workspace.';
@@ -79,7 +106,7 @@ const CreateWorkspaceDialog = () => {
         <div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur flex items-center justify-center text-left z-50 p-4">
             <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 w-full max-w-md text-zinc-900 dark:text-zinc-200 relative shadow-2xl">
                 <button 
-                    className="absolute top-3 right-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-250 cursor-pointer" 
+                    className="absolute top-3 right-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer" 
                     onClick={() => dispatch(closeModal('createWorkspace'))} 
                 >
                     <X className="size-5" />
@@ -101,7 +128,7 @@ const CreateWorkspaceDialog = () => {
                             value={formData.name} 
                             onChange={handleNameChange}
                             placeholder="e.g. Acme Corporation, Marketing Team" 
-                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 mt-1 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             required 
                         />
                     </div>
@@ -118,7 +145,7 @@ const CreateWorkspaceDialog = () => {
                                 value={formData.slug} 
                                 onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
                                 placeholder="workspace-slug" 
-                                className="w-full pl-14 pr-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="w-full pl-14 pr-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                                 required 
                             />
                         </div>
@@ -134,9 +161,50 @@ const CreateWorkspaceDialog = () => {
                             value={formData.description} 
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
                             placeholder="Briefly describe the purpose of this workspace..." 
-                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 mt-1 text-zinc-900 dark:text-zinc-200 text-sm h-20 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 mt-1 text-zinc-900 dark:text-zinc-200 text-sm h-20 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             maxLength={250}
                         />
+                    </div>
+
+                    {/* Workspace Logo (Optional) */}
+                    <div>
+                        <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Workspace Logo (Optional)</label>
+                        <div className="mt-2 flex items-center gap-4">
+                            <div className="size-12 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center overflow-hidden bg-zinc-50 dark:bg-zinc-900 flex-shrink-0">
+                                {logoPreview ? (
+                                    <img src={logoPreview} alt="Logo preview" className="size-full object-cover" />
+                                ) : (
+                                    <Briefcase className="size-5 text-zinc-400" />
+                                )}
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <input 
+                                    type="file" 
+                                    accept="image/png, image/jpeg, image/jpg" 
+                                    onChange={handleLogoChange}
+                                    className="hidden" 
+                                    id="workspace-logo-file"
+                                />
+                                <label 
+                                    htmlFor="workspace-logo-file"
+                                    className="px-3 py-1.5 rounded border border-zinc-300 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer select-none"
+                                >
+                                    Choose Image
+                                </label>
+                                {logoPreview && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setLogo(null); setLogoPreview(''); }}
+                                        className="text-[10px] text-red-500 hover:underline text-left cursor-pointer font-medium"
+                                    >
+                                        Remove Logo
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-zinc-500 dark:text-zinc-450 mt-1">
+                            PNG, JPG, or JPEG. Max size 2 MB.
+                        </p>
                     </div>
 
                     {/* Footer */}
@@ -144,7 +212,7 @@ const CreateWorkspaceDialog = () => {
                         <button 
                             type="button" 
                             onClick={() => dispatch(closeModal('createWorkspace'))} 
-                            className="px-4 py-2 rounded border border-zinc-300 dark:border-zinc-750 text-zinc-900 dark:text-zinc-250 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer" 
+                            className="px-4 py-2 rounded border border-zinc-300 dark:border-zinc-800 text-zinc-750 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer" 
                         >
                             Cancel
                         </button>

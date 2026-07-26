@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { WorkspaceService } from '../services/workspace.service';
 import { ActivityLogService } from '../services/activity.service';
 import { UnauthorizedError } from '../utils/errors';
+import { UploadService } from '../services/cloudinary.service';
 
 const workspaceService = new WorkspaceService();
 const activityLog = new ActivityLogService();
@@ -25,7 +26,14 @@ export class WorkspaceController {
     try {
       if (!req.user) throw new UnauthorizedError();
       const { name, slug, description, imageUrl } = req.body;
-      const workspace = await workspaceService.createWorkspace(req.user.id, name, slug, description, imageUrl);
+
+      let logoUrl = imageUrl;
+      if (imageUrl && imageUrl.startsWith('data:image/')) {
+        const uploadResult = await UploadService.uploadBase64(imageUrl, 'workspaces');
+        logoUrl = uploadResult.url;
+      }
+
+      const workspace = await workspaceService.createWorkspace(req.user.id, name, slug, description, logoUrl);
 
       res.status(201).json({
         success: true,
@@ -57,11 +65,19 @@ export class WorkspaceController {
       const workspaceId = req.params.id;
       const { name, description, settings, imageUrl } = req.body;
 
+      let logoUrl = imageUrl;
+      if (imageUrl === '') {
+        logoUrl = '';
+      } else if (imageUrl && imageUrl.startsWith('data:image/')) {
+        const uploadResult = await UploadService.uploadBase64(imageUrl, 'workspaces');
+        logoUrl = uploadResult.url;
+      }
+
       const workspace = await workspaceService.updateWorkspace(workspaceId, req.user.id, {
         name,
         description,
         settings,
-        imageUrl,
+        imageUrl: logoUrl,
       });
 
       res.status(200).json({

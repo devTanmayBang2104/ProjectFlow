@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check, Plus, UserPlus } from "lucide-react";
+import { ChevronDown, Check, Plus, UserPlus, Settings } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { setActiveWorkspaceId, openModal } from "../features/uiSlice";
 import { useWorkspacesQuery } from "../hooks/useWorkspaces";
@@ -106,10 +106,19 @@ function WorkspaceDropdown() {
                     <hr className="border-gray-200 dark:border-zinc-700" />
 
                     <div 
+                        onClick={() => { dispatch(openModal('workspaceSettings')); setIsOpen(false); }}
+                        className="p-2 cursor-pointer rounded group hover:bg-gray-100 dark:hover:bg-zinc-800" 
+                    >
+                        <p className="flex items-center text-xs gap-2 my-1 w-full text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white font-medium">
+                            <Settings className="w-4 h-4 text-blue-500" /> Workspace Settings
+                        </p>
+                    </div>
+
+                    <div 
                         onClick={() => { setIsInviteOpen(true); setIsOpen(false); }}
                         className="p-2 cursor-pointer rounded group hover:bg-gray-100 dark:hover:bg-zinc-800" 
                     >
-                        <p className="flex items-center text-xs gap-2 my-1 w-full text-zinc-650 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white font-medium">
+                        <p className="flex items-center text-xs gap-2 my-1 w-full text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white font-medium">
                             <UserPlus className="w-4 h-4 text-blue-500" /> Invite to Workspace
                         </p>
                     </div>

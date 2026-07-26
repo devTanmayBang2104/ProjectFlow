@@ -46,8 +46,8 @@ app.use(
 );
 
 // 3. Built-in Parsing Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
 
 // Serve uploads statically for dev local fallback

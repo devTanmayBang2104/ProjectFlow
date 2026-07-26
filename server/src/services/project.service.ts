@@ -1,6 +1,6 @@
 import prisma from '../config/db';
 import { Priority, ProjectStatus, ActivityAction, NotificationType } from '@prisma/client';
-import { BadRequestError, NotFoundError } from '../utils/errors';
+import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { ActivityLogService } from './activity.service';
 import { NotificationService } from './notification.service';
 
@@ -11,31 +11,85 @@ export class ProjectService {
   /**
    * List all projects inside a specific workspace.
    */
-  public async getWorkspaceProjects(workspaceId: string): Promise<any[]> {
-    return prisma.project.findMany({
-      where: { workspaceId },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          }
-        },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
+  public async getWorkspaceProjects(workspaceId: string, userId: string): Promise<any[]> {
+    const membership = await prisma.workspaceMember.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId,
+        }
+      }
+    });
+
+    if (!membership) {
+      throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
+    }
+
+    const isAdmin = membership.role === 'ADMIN';
+
+    if (isAdmin) {
+      return prisma.project.findMany({
+        where: { workspaceId },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            }
+          },
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                }
               }
             }
           }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    } else {
+      return prisma.project.findMany({
+        where: {
+          workspaceId,
+          OR: [
+            { team_lead: userId },
+            {
+              members: {
+                some: {
+                  userId,
+                }
+              }
+            }
+          ]
+        },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            }
+          },
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
   }
 
   /**
@@ -106,7 +160,7 @@ export class ProjectService {
   /**
    * Retrieves detailed project information including members, tasks, and sprints.
    */
-  public async getProjectById(projectId: string): Promise<any> {
+  public async getProjectById(projectId: string, userId: string): Promise<any> {
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -151,6 +205,30 @@ export class ProjectService {
 
     if (!project) {
       throw new NotFoundError('Project not found.');
+    }
+
+    // Check workspace membership
+    const membership = await prisma.workspaceMember.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId: project.workspaceId,
+        }
+      }
+    });
+
+    if (!membership) {
+      throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
+    }
+
+    // If role is MEMBER, check if user is team lead or project member
+    if (membership.role !== 'ADMIN') {
+      const isTeamLead = project.team_lead === userId;
+      const isProjectMember = project.members.some((m) => m.userId === userId);
+
+      if (!isTeamLead && !isProjectMember) {
+        throw new ForbiddenError('Access Denied. You are not a member of this project.');
+      }
     }
 
     return project;

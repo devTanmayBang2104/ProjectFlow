@@ -117,9 +117,9 @@ const ProjectTasks = ({ tasks }) => {
                         ],
                     };
                     return (
-                        <select key={name} name={name} onChange={handleFilterChange} className=" border not-dark:bg-white border-zinc-300 dark:border-zinc-800 outline-none px-3 py-1 rounded text-sm text-zinc-900 dark:text-zinc-200" >
+                        <select key={name} name={name} onChange={handleFilterChange} className=" border bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-800 outline-none px-3 py-1 rounded text-sm text-zinc-900 dark:text-zinc-200 focus:outline-none" >
                             {options[name].map((opt, idx) => (
-                                <option key={idx} value={opt.value}>{opt.label}</option>
+                                <option key={idx} value={opt.value} className="bg-white dark:bg-zinc-900">{opt.label}</option>
                             ))}
                         </select>
                     );

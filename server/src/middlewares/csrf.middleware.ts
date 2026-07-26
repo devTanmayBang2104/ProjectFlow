@@ -9,6 +9,14 @@ import { ForbiddenError } from '../utils/errors';
 export const csrfProtection = (req: Request, res: Response, next: NextFunction): void => {
   // 1. Skip CSRF validation for safe HTTP methods
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    // Auto-generate CSRF cookie if user is authenticated but CSRF cookie is missing/expired
+    if (req.cookies?.accessToken && !req.cookies?.['csrf-token']) {
+      try {
+        generateCsrfToken(req, res);
+      } catch (e) {
+        // Safe fallback
+      }
+    }
     next();
     return;
   }

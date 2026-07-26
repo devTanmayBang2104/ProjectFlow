@@ -23,10 +23,17 @@ export const useSocketSync = () => {
       socket.connect();
     }
 
-    // Listen to real-time events from server
-    
+    socket.on('connect', () => {
+      console.log(`[Socket] Connected successfully with ID: ${socket.id}`);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('[Socket] Connection error:', err);
+    });
+
     // 1. Personal Notification Received
     socket.on('notification:new', (notification) => {
+      console.log('[Socket] notification:new received:', notification);
       toast(notification.message || 'New notification received', {
         icon: '🔔',
         duration: 4000,
@@ -36,6 +43,7 @@ export const useSocketSync = () => {
 
     // 2. Activity Log Added
     socket.on('activity:new', (log) => {
+      console.log('[Socket] activity:new received:', log);
       if (log.workspaceId === activeWorkspaceId) {
         queryClient.invalidateQueries({ queryKey: ['workspace', activeWorkspaceId, 'activities'] });
       }
@@ -43,6 +51,7 @@ export const useSocketSync = () => {
 
     // 3. Task Created, Updated, or Deleted
     socket.on('task:changed', ({ taskId, action, taskData }) => {
+      console.log('[Socket] task:changed received:', { taskId, action, taskData });
       // Invalidate the specific task query
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       
@@ -60,6 +69,8 @@ export const useSocketSync = () => {
 
     // Cleanup listeners on unmount or dependency change
     return () => {
+      socket.off('connect');
+      socket.off('connect_error');
       socket.off('notification:new');
       socket.off('activity:new');
       socket.off('task:changed');

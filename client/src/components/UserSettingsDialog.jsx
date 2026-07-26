@@ -178,7 +178,7 @@ const UserSettingsDialog = () => {
                 {/* Content Panel */}
                 <div className="flex-1 p-6 relative flex flex-col justify-between">
                     <button 
-                        className="absolute top-3 right-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-250 cursor-pointer" 
+                        className="absolute top-3 right-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer" 
                         onClick={() => dispatch(closeModal('settings'))} 
                     >
                         <X className="size-5" />
@@ -209,7 +209,7 @@ const UserSettingsDialog = () => {
                                             value={profileForm.name} 
                                             onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} 
                                             placeholder="Enter your name" 
-                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                                             required 
                                         />
                                     </div>
@@ -221,7 +221,7 @@ const UserSettingsDialog = () => {
                                             value={profileForm.username} 
                                             onChange={(e) => setProfileForm({ ...profileForm, username: e.target.value.toLowerCase().replace(/\s+/g, '') })} 
                                             placeholder="Choose a username" 
-                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                                         />
                                     </div>
 
@@ -249,7 +249,7 @@ const UserSettingsDialog = () => {
                                             type="password" 
                                             value={passwordForm.currentPassword} 
                                             onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })} 
-                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                                             required 
                                         />
                                     </div>
@@ -260,7 +260,7 @@ const UserSettingsDialog = () => {
                                             type="password" 
                                             value={passwordForm.newPassword} 
                                             onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} 
-                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                                             required 
                                         />
                                     </div>
@@ -271,7 +271,7 @@ const UserSettingsDialog = () => {
                                             type="password" 
                                             value={passwordForm.confirmNewPassword} 
                                             onChange={(e) => setPasswordForm({ ...passwordForm, confirmNewPassword: e.target.value })} 
-                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                                             required 
                                         />
                                     </div>
@@ -303,7 +303,7 @@ const UserSettingsDialog = () => {
                                             value={deactivatePassword} 
                                             onChange={(e) => setDeactivatePassword(e.target.value)} 
                                             placeholder="Enter password to confirm deactivation"
-                                            className="w-full px-3 py-1.5 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-xs focus:outline-none focus:ring-1 focus:ring-red-500" 
+                                            className="w-full px-3 py-1.5 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-xs focus:outline-none focus:ring-1 focus:ring-red-500" 
                                             required={!!user?.passwordHash} 
                                         />
                                         <button 
@@ -328,7 +328,7 @@ const UserSettingsDialog = () => {
                                             value={deletePassword} 
                                             onChange={(e) => setDeletePassword(e.target.value)} 
                                             placeholder="Enter password to confirm permanent deletion"
-                                            className="w-full px-3 py-1.5 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-xs focus:outline-none focus:ring-1 focus:ring-red-500" 
+                                            className="w-full px-3 py-1.5 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-xs focus:outline-none focus:ring-1 focus:ring-red-500" 
                                             required={!!user?.passwordHash} 
                                         />
                                         <button 

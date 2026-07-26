@@ -11,6 +11,7 @@ const initialState = {
     createSprint: false,
     taskDetails: false,
     settings: false,
+    workspaceSettings: false,
   },
   selectedTaskId: null, // For displaying task detail drawer/modal
 };

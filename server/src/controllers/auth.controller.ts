@@ -79,6 +79,9 @@ export class AuthController {
       // Reissue rotated cookies
       setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
+      // Rotate/re-generate CSRF cookie
+      generateCsrfToken(req, res);
+
       res.status(200).json({
         success: true,
         message: 'Session refreshed successfully.',
@@ -189,6 +192,9 @@ export class AuthController {
       }
       const user = await authService.getProfile(req.user.id);
       
+      // Ensure CSRF cookie is set/refreshed on profile request
+      generateCsrfToken(req, res);
+
       res.status(200).json({
         success: true,
         data: user,

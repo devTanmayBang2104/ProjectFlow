@@ -145,7 +145,24 @@ export class TaskController {
       const taskId = req.params.id;
       const { title } = req.body;
 
-      await this.checkTaskAccess(req.user.id, taskId);
+      const task = await this.checkTaskAccess(req.user.id, taskId);
+
+      // Check if user is workspace admin OR project team lead
+      const workspaceMember = await prisma.workspaceMember.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId: req.user.id,
+            workspaceId: task.project.workspaceId,
+          }
+        }
+      });
+      const isTeamLead = task.project.team_lead === req.user.id;
+      const isAdmin = workspaceMember?.role === 'ADMIN';
+
+      if (!isTeamLead && !isAdmin) {
+        throw new ForbiddenError('Access Denied. Only the Team Lead can add subtasks.');
+      }
+
       const subtask = await taskService.addSubtask(taskId, title);
 
       res.status(201).json({
@@ -187,7 +204,24 @@ export class TaskController {
       const subtask = await prisma.subtask.findUnique({ where: { id: subtaskId } });
       if (!subtask) throw new NotFoundError('Subtask not found.');
 
-      await this.checkTaskAccess(req.user.id, subtask.taskId);
+      const task = await this.checkTaskAccess(req.user.id, subtask.taskId);
+
+      // Check if user is workspace admin OR project team lead
+      const workspaceMember = await prisma.workspaceMember.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId: req.user.id,
+            workspaceId: task.project.workspaceId,
+          }
+        }
+      });
+      const isTeamLead = task.project.team_lead === req.user.id;
+      const isAdmin = workspaceMember?.role === 'ADMIN';
+
+      if (!isTeamLead && !isAdmin) {
+        throw new ForbiddenError('Access Denied. Only the Team Lead can delete subtasks.');
+      }
+
       await taskService.deleteSubtask(subtaskId);
 
       res.status(200).json({

@@ -78,7 +78,6 @@ export const useUpdateWorkspaceMutation = (workspaceId) => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['workspaces'] });
       queryClient.invalidateQueries({ queryKey: ['workspace', workspaceId] });
-      queryClient.setQueryData(['workspace', workspaceId], data);
     },
   });
 };

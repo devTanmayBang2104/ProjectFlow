@@ -1,12 +1,16 @@
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 import path from 'path';
+import { BadRequestError } from '../utils/errors';
 
 const isCloudinaryConfigured = (): boolean => {
   return !!(
     process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_CLOUD_NAME !== 'your_cloudinary_cloud_name_here' &&
     process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_SECRET
+    process.env.CLOUDINARY_API_KEY !== 'your_cloudinary_api_key_here' &&
+    process.env.CLOUDINARY_API_SECRET &&
+    process.env.CLOUDINARY_API_SECRET !== 'your_cloudinary_api_secret_here'
   );
 };
 
@@ -26,13 +30,25 @@ export class UploadService {
    * 
    * @param file Express.Multer.File object
    * @param folder Target folder/prefix (e.g., 'avatars', 'attachments')
+   * @param options Transformation options
    */
-  public static async uploadFile(file: Express.Multer.File, folder: string): Promise<{ url: string; publicId: string }> {
+  public static async uploadFile(
+    file: Express.Multer.File, 
+    folder: string,
+    options?: { cropSquare?: boolean }
+  ): Promise<{ url: string; publicId: string }> {
     // 1. Cloudinary upload path
     if (isCloudinaryConfigured()) {
       return new Promise((resolve, reject) => {
+        const uploadOptions: any = { folder: `project-management/${folder}` };
+        if (options?.cropSquare) {
+          uploadOptions.transformation = [
+            { width: 256, height: 256, crop: 'fill', gravity: 'center' }
+          ];
+        }
+        
         const stream = cloudinary.uploader.upload_stream(
-          { folder: `project-management/${folder}` },
+          uploadOptions,
           (error, result) => {
             if (error) {
               console.error('[Cloudinary Error] Failed to upload:', error);
@@ -71,6 +87,52 @@ export class UploadService {
       url: localUrl,
       publicId: `local-${filename}`,
     };
+  }
+
+  /**
+   * Decodes a base64 encoded image string, performs size/type validation, 
+   * and uploads it to either Cloudinary or local disk storage.
+   */
+  public static async uploadBase64(base64String: string, folder: string): Promise<{ url: string; publicId: string }> {
+    if (!base64String.startsWith('data:image/')) {
+      throw new BadRequestError('Invalid image data format.');
+    }
+
+    const parts = base64String.split(';base64,');
+    if (parts.length !== 2) {
+      throw new BadRequestError('Invalid base64 image encoding.');
+    }
+
+    const mime = parts[0].split(':')[1];
+    const extension = mime.split('/')[1] || 'png';
+    
+    // Validate image format
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+    if (!allowedTypes.includes(mime)) {
+      throw new BadRequestError('Only PNG, JPG, JPEG, and GIF images are allowed.');
+    }
+
+    const buffer = Buffer.from(parts[1], 'base64');
+    
+    // Validate size (2MB limit)
+    if (buffer.length > 2 * 1024 * 1024) {
+      throw new BadRequestError('Uploaded image size cannot exceed 2 MB.');
+    }
+
+    const mockFile: Express.Multer.File = {
+      buffer,
+      originalname: `logo-${Date.now()}.${extension}`,
+      fieldname: 'logo',
+      encoding: '7bit',
+      mimetype: mime,
+      size: buffer.length,
+      destination: '',
+      filename: '',
+      path: '',
+      stream: null as any,
+    };
+
+    return this.uploadFile(mockFile, folder, { cropSquare: folder === 'workspaces' });
   }
 
   /**

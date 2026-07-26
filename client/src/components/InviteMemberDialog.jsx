@@ -75,7 +75,7 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                                 value={formData.email} 
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
                                 placeholder="Enter email address" 
-                                className="pl-10 w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-sm placeholder-zinc-400 dark:placeholder-zinc-500 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="pl-10 w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm placeholder-zinc-400 dark:placeholder-zinc-500 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500" 
                                 required 
                             />
                         </div>
@@ -87,7 +87,7 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                         <select 
                             value={formData.role} 
                             onChange={(e) => setFormData({ ...formData, role: e.target.value })} 
-                            className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 py-2 px-3 mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm" 
+                            className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 py-2 px-3 mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm" 
                         >
                             <option value="MEMBER">Member</option>
                             <option value="ADMIN">Admin</option>
@@ -99,7 +99,7 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                         <button 
                             type="button" 
                             onClick={() => setIsDialogOpen(false)} 
-                            className="px-4 py-2 rounded border border-zinc-300 dark:border-zinc-750 text-zinc-900 dark:text-zinc-250 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer" 
+                            className="px-4 py-2 rounded border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer" 
                         >
                             Cancel
                         </button>

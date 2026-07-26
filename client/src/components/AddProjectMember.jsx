@@ -70,7 +70,7 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
                                 id="memberSelect"
                                 value={selectedUserId} 
                                 onChange={(e) => setSelectedUserId(e.target.value)} 
-                                className="pl-10 w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 text-zinc-900 dark:text-zinc-200 text-sm py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="pl-10 w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500" 
                                 required 
                             >
                                 <option value="">Select a member...</option>
@@ -90,7 +90,7 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
                         <button 
                             type="button" 
                             onClick={() => setIsDialogOpen(false)} 
-                            className="px-4 py-2 rounded border border-zinc-300 dark:border-zinc-750 text-zinc-900 dark:text-zinc-250 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer" 
+                            className="px-4 py-2 rounded border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer" 
                         >
                             Cancel
                         </button>

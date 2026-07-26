@@ -77,7 +77,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                             value={formData.title} 
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
                             placeholder="Task title" 
-                            className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                            className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             required 
                         />
                     </div>
@@ -89,7 +89,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                             value={formData.description} 
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
                             placeholder="Describe the task" 
-                            className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 h-20 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                            className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 h-20 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500" 
                         />
                     </div>
 
@@ -100,7 +100,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                             <select 
                                 value={formData.type} 
                                 onChange={(e) => setFormData({ ...formData, type: e.target.value })} 
-                                className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             >
                                 <option value="TASK">Task</option>
                                 <option value="BUG">Bug</option>
@@ -115,7 +115,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                             <select 
                                 value={formData.priority} 
                                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })} 
-                                className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             >
                                 <option value="LOW">Low</option>
                                 <option value="MEDIUM">Medium</option>
@@ -131,7 +131,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                             <select 
                                 value={formData.assigneeId} 
                                 onChange={(e) => setFormData({ ...formData, assigneeId: e.target.value })} 
-                                className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             >
                                 <option value="">Unassigned</option>
                                 {teamMembers.map((member) => (
@@ -147,7 +147,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                             <select 
                                 value={formData.status} 
                                 onChange={(e) => setFormData({ ...formData, status: e.target.value })} 
-                                className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             >
                                 <option value="TODO">To Do</option>
                                 <option value="IN_PROGRESS">In Progress</option>
@@ -166,7 +166,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                                 value={formData.due_date} 
                                 onChange={(e) => setFormData({ ...formData, due_date: e.target.value })} 
                                 min={new Date().toISOString().split('T')[0]} 
-                                className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-755 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             />
                         </div>
                         {formData.due_date && (
@@ -181,7 +181,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                         <button 
                             type="button" 
                             onClick={() => setShowCreateTask(false)} 
-                            className="rounded border border-zinc-300 dark:border-zinc-750 px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer" 
+                            className="rounded border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer" 
                         >
                             Cancel
                         </button>

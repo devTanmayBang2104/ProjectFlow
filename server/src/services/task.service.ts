@@ -121,6 +121,18 @@ export class TaskService {
             status: true,
             priority: true,
             progress: true,
+            team_lead: true,
+            workspace: {
+              select: {
+                ownerId: true,
+                members: {
+                  select: {
+                    userId: true,
+                    role: true,
+                  }
+                }
+              }
+            }
           }
         },
         assignee: {
@@ -390,11 +402,23 @@ export class TaskService {
       task.projectId
     );
 
+    // Broadcast task change for real-time socket updates
+    SocketService.broadcastTaskUpdate(task.project.workspaceId, taskId, 'update', {
+      id: taskId,
+    });
+
     return comment;
   }
 
   public async deleteComment(commentId: string, userId: string): Promise<void> {
-    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      include: {
+        task: {
+          include: { project: true }
+        }
+      }
+    });
     if (!comment) {
       throw new NotFoundError('Comment not found.');
     }
@@ -403,7 +427,15 @@ export class TaskService {
       throw new ForbiddenError('You can only delete your own comments.');
     }
 
+    const workspaceId = comment.task.project.workspaceId;
+    const taskId = comment.taskId;
+
     await prisma.comment.delete({ where: { id: commentId } });
+
+    // Broadcast task change for real-time socket updates
+    SocketService.broadcastTaskUpdate(workspaceId, taskId, 'update', {
+      id: taskId,
+    });
   }
 
   // --- ATTACHMENTS ---
@@ -429,11 +461,10 @@ export class TaskService {
       data: {
         taskId,
         userId,
-        url,
-        filename,
-        size,
-        type,
-        publicId,
+        fileUrl: url,
+        fileName: filename,
+        fileSize: size,
+        fileType: type,
       },
       include: {
         user: {
@@ -499,7 +530,23 @@ export class TaskService {
 
     // 1. Delete physical storage (Cloudinary or local disk)
     const { UploadService } = await import('./cloudinary.service');
-    await UploadService.deleteFile(attachment.publicId);
+    const getPublicIdFromUrl = (fileUrl: string): string => {
+      if (fileUrl.includes('/uploads/')) {
+        const filename = fileUrl.split('/uploads/').pop();
+        return filename ? `local-${filename}` : '';
+      }
+      if (fileUrl.includes('res.cloudinary.com')) {
+        const parts = fileUrl.split('/image/upload/');
+        if (parts.length > 1) {
+          const pathAfterUpload = parts[1].replace(/^v\d+\//, '');
+          const lastDotIndex = pathAfterUpload.lastIndexOf('.');
+          return lastDotIndex !== -1 ? pathAfterUpload.substring(0, lastDotIndex) : pathAfterUpload;
+        }
+      }
+      return '';
+    };
+    const publicId = getPublicIdFromUrl(attachment.fileUrl);
+    await UploadService.deleteFile(publicId);
 
     // 2. Delete database entry
     await prisma.attachment.delete({ where: { id: attachmentId } });
@@ -511,7 +558,7 @@ export class TaskService {
       ActivityAction.UPDATE,
       'ATTACHMENT',
       attachmentId,
-      `removed attachment "${attachment.filename}" from task "${attachment.task.title}"`,
+      `removed attachment "${attachment.fileName}" from task "${attachment.task.title}"`,
       attachment.task.projectId
     );
 
