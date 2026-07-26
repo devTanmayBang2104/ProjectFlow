@@ -51,18 +51,23 @@ export const useSocketSync = () => {
 
     // 3. Task Created, Updated, or Deleted
     socket.on('task:changed', ({ taskId, action, taskData }) => {
-      console.log('[Socket] task:changed received:', { taskId, action, taskData });
+      console.log('[DEBUG CLIENT SOCKET] task:changed received for taskId:', taskId, 'action:', action, 'taskData:', taskData);
+      
       // Invalidate the specific task query
+      console.log('[DEBUG CLIENT SOCKET] Invalidating task details query for taskId:', taskId);
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+      console.log('[DEBUG CLIENT SOCKET] Task details query invalidation triggered for taskId:', taskId);
       
       // Invalidate the project query if a projectId is provided in the task details
       const projectId = taskData?.projectId || taskData?.project?.id;
       if (projectId) {
+        console.log('[DEBUG CLIENT SOCKET] Invalidating project query for projectId:', projectId);
         queryClient.invalidateQueries({ queryKey: ['project', projectId] });
       }
       
       // Invalidate the active workspace data to refresh kanban/lists
       if (activeWorkspaceId) {
+        console.log('[DEBUG CLIENT SOCKET] Invalidating workspace query for workspaceId:', activeWorkspaceId);
         queryClient.invalidateQueries({ queryKey: ['workspace', activeWorkspaceId] });
       }
     });

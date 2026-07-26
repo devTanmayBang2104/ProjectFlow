@@ -21,6 +21,15 @@ const TaskDetails = () => {
     const { data: user } = useProfile();
     const { data: task, isLoading: isTaskLoading } = useTaskDetailsQuery(taskId);
 
+    console.log("[DEBUG COMPONENT] TaskDetails rendered:", {
+        taskId,
+        user: user ? { id: user.id, email: user.email } : null,
+        taskExists: !!task,
+        isTaskLoading,
+        commentsCount: task?.comments?.length || 0,
+        subtasksCount: task?.subtasks?.length || 0,
+    });
+
     const [newComment, setNewComment] = useState("");
     const [newSubtask, setNewSubtask] = useState("");
     const [uploading, setUploading] = useState(false);

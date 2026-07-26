@@ -46,8 +46,11 @@ export class SocketService {
 
     // 2. Connection Listener
     io.on('connection', async (socket: Socket) => {
-      const userId = socket.data.user?.id;
-      if (!userId) return;
+      const userId = socket.data.user?.userId;
+      if (!userId) {
+        console.warn(`[Socket Debug] Connection rejected: userId is undefined on socket.id ${socket.id}`);
+        return;
+      }
 
       console.log(`[Socket] Client connected: ${socket.id} (User: ${userId})`);
 
@@ -65,6 +68,9 @@ export class SocketService {
           socket.join(`workspace:${m.workspaceId}`);
           console.log(`[Socket] User ${userId} joined room workspace:${m.workspaceId}`);
         });
+
+        // Log all joined rooms for this socket connection
+        console.log(`[Socket Debug] Active rooms for socket ${socket.id} (User ${userId}):`, Array.from(socket.rooms));
       } catch (err) {
         console.error('[Socket Room Join Error] Failed to join workspace rooms:', err);
       }
@@ -100,12 +106,15 @@ export class SocketService {
    */
   public static broadcastTaskUpdate(workspaceId: string, taskId: string, action: 'create' | 'update' | 'delete', taskData: any): void {
     if (ioInstance) {
+      console.log(`[DEBUG SERVER] Emitting task:changed event for taskId: ${taskId}, action: ${action} to workspace: ${workspaceId}`);
       ioInstance.to(`workspace:${workspaceId}`).emit('task:changed', {
         taskId,
         action,
         taskData
       });
       console.log(`[Socket Broadcast] Sent task:changed [${action}] to workspace:${workspaceId}`);
+    } else {
+      console.warn(`[DEBUG SERVER WARNING] Cannot broadcast task:changed because ioInstance is null!`);
     }
   }
 }

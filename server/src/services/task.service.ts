@@ -317,42 +317,81 @@ export class TaskService {
   // --- SUBTASKS ---
 
   public async addSubtask(taskId: string, title: string): Promise<any> {
-    const task = await prisma.task.findUnique({ where: { id: taskId } });
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      include: { project: true }
+    });
     if (!task) {
       throw new NotFoundError('Task not found.');
     }
 
-    return prisma.subtask.create({
+    const subtask = await prisma.subtask.create({
       data: {
         taskId,
         title,
         isCompleted: false,
       }
     });
+
+    // Broadcast subtask change for real-time socket updates
+    SocketService.broadcastTaskUpdate(task.project.workspaceId, taskId, 'update', {
+      id: taskId,
+    });
+
+    return subtask;
   }
 
   public async updateSubtask(subtaskId: string, data: { title?: string; isCompleted?: boolean }): Promise<any> {
-    const subtask = await prisma.subtask.findUnique({ where: { id: subtaskId } });
+    const subtask = await prisma.subtask.findUnique({
+      where: { id: subtaskId },
+      include: {
+        task: {
+          include: { project: true }
+        }
+      }
+    });
     if (!subtask) {
       throw new NotFoundError('Subtask not found.');
     }
 
-    return prisma.subtask.update({
+    const updated = await prisma.subtask.update({
       where: { id: subtaskId },
       data: {
         title: data.title,
         isCompleted: data.isCompleted,
       }
     });
+
+    // Broadcast subtask change for real-time socket updates
+    SocketService.broadcastTaskUpdate(subtask.task.project.workspaceId, subtask.taskId, 'update', {
+      id: subtask.taskId,
+    });
+
+    return updated;
   }
 
   public async deleteSubtask(subtaskId: string): Promise<void> {
-    const subtask = await prisma.subtask.findUnique({ where: { id: subtaskId } });
+    const subtask = await prisma.subtask.findUnique({
+      where: { id: subtaskId },
+      include: {
+        task: {
+          include: { project: true }
+        }
+      }
+    });
     if (!subtask) {
       throw new NotFoundError('Subtask not found.');
     }
 
+    const workspaceId = subtask.task.project.workspaceId;
+    const taskId = subtask.taskId;
+
     await prisma.subtask.delete({ where: { id: subtaskId } });
+
+    // Broadcast subtask change for real-time socket updates
+    SocketService.broadcastTaskUpdate(workspaceId, taskId, 'update', {
+      id: taskId,
+    });
   }
 
   // --- COMMENTS ---

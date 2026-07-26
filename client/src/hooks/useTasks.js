@@ -8,7 +8,9 @@ export const useTaskDetailsQuery = (taskId) => {
   return useQuery({
     queryKey: ['task', taskId],
     queryFn: async () => {
+      console.log(`[DEBUG QUERY] Fetching task details for taskId: ${taskId} from API...`);
       const response = await apiClient.get(`/tasks/${taskId}`);
+      console.log(`[DEBUG QUERY] Task details query fetched successfully for taskId: ${taskId}`, response.data.data);
       return response.data.data;
     },
     enabled: !!taskId,
