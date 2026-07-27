@@ -23,7 +23,14 @@ ProjectFlow is a production-ready, full-stack, multi-tenant workspace and projec
 ## ✨ Features
 
 * **Multi-Tenant Workspace Partitioning**: Access-isolated workspaces containing separate project pipelines, sprints, members, and activity histories.
-* **Agile Sprints & Task Management**: Create and track sprints, organize tasks (TODO, IN_PROGRESS, DONE), prioritize work (LOW, MEDIUM, HIGH), and assign duties.
+* **Granular Role-Based Access Control (RBAC)**: Comprehensive server-side access controls and frontend UI gating protecting:
+  * **Workspaces**: Workspace invite management is restricted to Workspace Owners; Admins cannot remove other Admins or the Workspace Owner.
+  * **Projects**: Project creation is restricted to Workspace Admins/Owners.
+  * **Sprints**: Sprint read is restricted to project members; sprint modifications (create, edit, delete) are restricted to Workspace Admins/Owners and the Project Team Lead.
+  * **Tasks**: Task creation/reading/updating is restricted to Workspace Admins/Owners and Project Members; task deletion is restricted to Workspace Admins/Owners and the Project Team Lead.
+  * **Checklists / Subtasks**: Checklist adding/deleting is restricted to Workspace Admins/Owners and the Project Team Lead. Checklist checking/unchecking is allowed for all project members.
+  * **Comments & Attachments**: Adding comments and uploading attachments are open to project members. Comment deletion is restricted to the comment creator and Workspace Admins. Attachment deletion is restricted to the file uploader, Workspace Admins, and the Project Team Lead.
+* **Interactive Sprint Planning & Backlog Management**: A dedicated Sprints tab in project details showing planned, active, and completed sprints, and a project backlog for unassigned tasks, with tools to easily move tasks between sprints and backlog.
 * **Production-Grade Auth & Security**:
   * Dual-Token JWT flow utilizing secure `HttpOnly` and `SameSite` cookie storage to prevent XSS.
   * Hashed database session storage with **Refresh Token Rotation (RTR)** to detect and revoke hijacked session replays.
@@ -31,7 +38,7 @@ ProjectFlow is a production-ready, full-stack, multi-tenant workspace and projec
   * Brute-force protection: locks accounts for 15 minutes after 5 failed login attempts.
   * Google OAuth 2.0 sign-in support.
 * **Workspace & Project Team Controls**: Invite workspace members globally and link them to projects with active member removal tools.
-* **Activity Audit Logs & Live Alerts**: Track user actions in workspace timelines and deliver real-time notifications.
+* **Activity Audit Logs & Live Alerts**: Track user actions in workspace timelines and deliver real-time notifications synced instantly via Socket.IO room subscriptions.
 * **Analytics & Calendar View**: Interactive stats dashboards and deadline schedules.
 
 ---
