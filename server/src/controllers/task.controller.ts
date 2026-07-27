@@ -11,10 +11,15 @@ export class TaskController {
    * Helper to verify user has access to a project's workspace.
    */
   private async checkProjectAccess(userId: string, projectId: string): Promise<void> {
-    const project = await prisma.project.findUnique({ where: { id: projectId } });
+    const project = await prisma.project.findUnique({ 
+      where: { id: projectId },
+      include: {
+        members: { select: { userId: true } }
+      }
+    });
     if (!project) throw new NotFoundError('Project not found.');
 
-    const isMember = await prisma.workspaceMember.findUnique({
+    const member = await prisma.workspaceMember.findUnique({
       where: {
         userId_workspaceId: {
           userId,
@@ -23,22 +28,35 @@ export class TaskController {
       }
     });
 
-    if (!isMember) {
-      throw new ForbiddenError('Access Denied. You are not a member of this workspace.');
+    if (!member) {
+      throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
+    }
+
+    const isAdmin = member.role === 'ADMIN';
+    const isProjectMember = project.members.some((m) => m.userId === userId) || project.team_lead === userId;
+
+    if (!isAdmin && !isProjectMember) {
+      throw new ForbiddenError('Access Denied. You must be a project member or a workspace administrator to create tasks.');
     }
   }
 
   /**
    * Helper to verify user has access to a task's workspace.
    */
-  private async checkTaskAccess(userId: string, taskId: string): Promise<any> {
+  private async checkTaskAccess(userId: string, taskId: string, requiredAccess: 'read' | 'write' | 'delete' = 'read'): Promise<any> {
     const task = await prisma.task.findUnique({
       where: { id: taskId },
-      include: { project: true }
+      include: {
+        project: {
+          include: {
+            members: { select: { userId: true } }
+          }
+        }
+      }
     });
     if (!task) throw new NotFoundError('Task not found.');
 
-    const isMember = await prisma.workspaceMember.findUnique({
+    const member = await prisma.workspaceMember.findUnique({
       where: {
         userId_workspaceId: {
           userId,
@@ -47,8 +65,22 @@ export class TaskController {
       }
     });
 
-    if (!isMember) {
-      throw new ForbiddenError('Access Denied. You are not a member of this workspace.');
+    if (!member) {
+      throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
+    }
+
+    const isAdmin = member.role === 'ADMIN';
+    const isProjectMember = task.project.members.some((m) => m.userId === userId) || task.project.team_lead === userId;
+
+    if (requiredAccess === 'delete') {
+      const isTeamLead = task.project.team_lead === userId;
+      if (!isAdmin && !isTeamLead) {
+        throw new ForbiddenError('Access Denied. Only the Team Lead or an Administrator can delete tasks.');
+      }
+    } else {
+      if (!isAdmin && !isProjectMember) {
+        throw new ForbiddenError('Access Denied. You must be a project member or a workspace administrator.');
+      }
     }
 
     return task;
@@ -90,7 +122,7 @@ export class TaskController {
       if (!req.user) throw new UnauthorizedError();
       const taskId = req.params.id;
 
-      await this.checkTaskAccess(req.user.id, taskId);
+      await this.checkTaskAccess(req.user.id, taskId, 'read');
       const task = await taskService.getTaskById(taskId);
 
       res.status(200).json({
@@ -107,7 +139,7 @@ export class TaskController {
       if (!req.user) throw new UnauthorizedError();
       const taskId = req.params.id;
 
-      await this.checkTaskAccess(req.user.id, taskId);
+      await this.checkTaskAccess(req.user.id, taskId, 'write');
       const updated = await taskService.updateTask(taskId, req.user.id, req.body);
 
       res.status(200).json({
@@ -125,7 +157,7 @@ export class TaskController {
       if (!req.user) throw new UnauthorizedError();
       const taskId = req.params.id;
 
-      await this.checkTaskAccess(req.user.id, taskId);
+      await this.checkTaskAccess(req.user.id, taskId, 'delete');
       await taskService.deleteTask(taskId, req.user.id);
 
       res.status(200).json({
@@ -183,7 +215,26 @@ export class TaskController {
       const subtask = await prisma.subtask.findUnique({ where: { id: subtaskId } });
       if (!subtask) throw new NotFoundError('Subtask not found.');
 
-      await this.checkTaskAccess(req.user.id, subtask.taskId);
+      const task = await this.checkTaskAccess(req.user.id, subtask.taskId);
+
+      // If renaming the subtask title, restrict to Team Leads / Workspace Admins / Owners
+      if (req.body.title !== undefined) {
+        const workspaceMember = await prisma.workspaceMember.findUnique({
+          where: {
+            userId_workspaceId: {
+              userId: req.user.id,
+              workspaceId: task.project.workspaceId,
+            }
+          }
+        });
+        const isTeamLead = task.project.team_lead === req.user.id;
+        const isAdmin = workspaceMember?.role === 'ADMIN';
+
+        if (!isTeamLead && !isAdmin) {
+          throw new ForbiddenError('Access Denied. Only the Team Lead or an Administrator can modify subtask details.');
+        }
+      }
+
       const updated = await taskService.updateSubtask(subtaskId, req.body);
 
       res.status(200).json({
@@ -259,11 +310,30 @@ export class TaskController {
       if (!req.user) throw new UnauthorizedError();
       const { commentId } = req.params;
 
-      const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+      const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+        include: {
+          task: {
+            include: { project: true }
+          }
+        }
+      });
       if (!comment) throw new NotFoundError('Comment not found.');
 
-      if (comment.userId !== req.user.id) {
-        throw new ForbiddenError('You can only delete your own comments.');
+      const isCreator = comment.userId === req.user.id;
+
+      const workspaceMember = await prisma.workspaceMember.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId: req.user.id,
+            workspaceId: comment.task.project.workspaceId,
+          }
+        }
+      });
+      const isAdmin = workspaceMember?.role === 'ADMIN';
+
+      if (!isCreator && !isAdmin) {
+        throw new ForbiddenError('Access Denied. You can only delete your own comments unless you are a Workspace Administrator.');
       }
 
       await taskService.deleteComment(commentId, req.user.id);
@@ -353,22 +423,8 @@ export class TaskController {
         return;
       }
 
-      // Security check: Verify project exists and user has workspace access
-      const task = await prisma.task.findUnique({
-        where: { id: taskId },
-        include: { project: true }
-      });
-      if (!task) throw new NotFoundError('Task not found.');
-
-      const member = await prisma.workspaceMember.findUnique({
-        where: {
-          userId_workspaceId: {
-            userId: req.user.id,
-            workspaceId: task.project.workspaceId,
-          }
-        }
-      });
-      if (!member) throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
+      // Security check: Verify project exists and user has workspace/project access
+      await this.checkTaskAccess(req.user.id, taskId, 'read');
 
       // Upload file via UploadService (handles Cloudinary vs Local Fallback)
       const uploadResult = await UploadService.uploadFile(req.file, 'attachments');

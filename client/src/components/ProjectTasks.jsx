@@ -4,6 +4,9 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUpdateTaskMutation, useDeleteTaskMutation } from "../hooks/useTasks";
 import { Bug, CalendarIcon, GitCommit, MessageSquare, Square, Trash, XIcon, Zap } from "lucide-react";
+import { useProfile } from "../hooks/useAuth";
+import { useActiveWorkspace } from "../hooks/useActiveWorkspace";
+import { useProjectDetailsQuery } from "../hooks/useProjects";
 
 const typeIcons = {
     BUG: { icon: Bug, color: "text-red-600 dark:text-red-400" },
@@ -26,6 +29,13 @@ const ProjectTasks = ({ tasks }) => {
     const projectId = tasks[0]?.projectId || "";
     const updateTaskMutation = useUpdateTaskMutation(projectId);
     const deleteTaskMutation = useDeleteTaskMutation(projectId);
+
+    const { data: currentUser } = useProfile();
+    const { isAdminOrOwner } = useActiveWorkspace();
+    const { data: project } = useProjectDetailsQuery(projectId);
+
+    const isTeamLead = project?.team_lead === currentUser?.id;
+    const canDeleteTasks = isAdminOrOwner || isTeamLead;
 
     const [filters, setFilters] = useState({
         status: "",
@@ -132,7 +142,7 @@ const ProjectTasks = ({ tasks }) => {
                     </button>
                 )}
 
-                {selectedTasks.length > 0 && (
+                {canDeleteTasks && selectedTasks.length > 0 && (
                     <button type="button" onClick={handleDelete} className="px-3 py-1 flex items-center gap-2 rounded bg-gradient-to-br from-indigo-400 to-indigo-500 text-zinc-100 dark:text-zinc-200 text-sm transition-colors" >
                         <Trash className="size-3" /> Delete
                     </button>
@@ -147,10 +157,12 @@ const ProjectTasks = ({ tasks }) => {
                         <table className="min-w-full text-sm text-left not-dark:bg-white text-zinc-900 dark:text-zinc-300">
                             <thead className="text-xs uppercase dark:bg-zinc-800/70 text-zinc-500 dark:text-zinc-400 ">
                                 <tr>
-                                    <th className="pl-2 pr-1">
-                                        <input onChange={() => selectedTasks.length > 1 ? setSelectedTasks([]) : setSelectedTasks(tasks.map((t) => t.id))} checked={selectedTasks.length === tasks.length} type="checkbox" className="size-3 accent-zinc-600 dark:accent-zinc-500" />
-                                    </th>
-                                    <th className="px-4 pl-0 py-3">Title</th>
+                                    {canDeleteTasks && (
+                                        <th className="pl-2 pr-1">
+                                            <input onChange={() => selectedTasks.length > 1 ? setSelectedTasks([]) : setSelectedTasks(tasks.map((t) => t.id))} checked={selectedTasks.length === tasks.length} type="checkbox" className="size-3 accent-zinc-600 dark:accent-zinc-500" />
+                                        </th>
+                                    )}
+                                    <th className={`px-4 ${canDeleteTasks ? "pl-0" : "pl-4"} py-3`}>Title</th>
                                     <th className="px-4 py-3">Type</th>
                                     <th className="px-4 py-3">Priority</th>
                                     <th className="px-4 py-3">Status</th>
@@ -166,10 +178,12 @@ const ProjectTasks = ({ tasks }) => {
 
                                         return (
                                             <tr key={task.id} onClick={() => navigate(`/taskDetails?projectId=${task.projectId}&taskId=${task.id}`)} className=" border-t border-zinc-300 dark:border-zinc-800 group hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all cursor-pointer" >
-                                                <td onClick={e => e.stopPropagation()} className="pl-2 pr-1">
-                                                    <input type="checkbox" className="size-3 accent-zinc-600 dark:accent-zinc-500" onChange={() => selectedTasks.includes(task.id) ? setSelectedTasks(selectedTasks.filter((i) => i !== task.id)) : setSelectedTasks((prev) => [...prev, task.id])} checked={selectedTasks.includes(task.id)} />
-                                                </td>
-                                                <td className="px-4 pl-0 py-2">{task.title}</td>
+                                                {canDeleteTasks && (
+                                                    <td onClick={e => e.stopPropagation()} className="pl-2 pr-1">
+                                                        <input type="checkbox" className="size-3 accent-zinc-600 dark:accent-zinc-500" onChange={() => selectedTasks.includes(task.id) ? setSelectedTasks(selectedTasks.filter((i) => i !== task.id)) : setSelectedTasks((prev) => [...prev, task.id])} checked={selectedTasks.includes(task.id)} />
+                                                    </td>
+                                                )}
+                                                <td className={`px-4 ${canDeleteTasks ? "pl-0" : "pl-4"} py-2`}>{task.title}</td>
                                                 <td className="px-4 py-2">
                                                     <div className="flex items-center gap-2">
                                                         {Icon && <Icon className={`size-4 ${color}`} />}
@@ -225,7 +239,9 @@ const ProjectTasks = ({ tasks }) => {
                                     <div key={task.id} className=" dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-300 dark:border-zinc-800 rounded-lg p-4 flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
                                             <h3 className="text-zinc-900 dark:text-zinc-200 text-sm font-semibold">{task.title}</h3>
-                                            <input type="checkbox" className="size-4 accent-zinc-600 dark:accent-zinc-500" onChange={() => selectedTasks.includes(task.id) ? setSelectedTasks(selectedTasks.filter((i) => i !== task.id)) : setSelectedTasks((prev) => [...prev, task.id])} checked={selectedTasks.includes(task.id)} />
+                                            {canDeleteTasks && (
+                                                <input type="checkbox" className="size-4 accent-zinc-600 dark:accent-zinc-500" onChange={() => selectedTasks.includes(task.id) ? setSelectedTasks(selectedTasks.filter((i) => i !== task.id)) : setSelectedTasks((prev) => [...prev, task.id])} checked={selectedTasks.includes(task.id)} />
+                                            )}
                                         </div>
 
                                         <div className="text-xs text-zinc-600 dark:text-zinc-400 flex items-center gap-2">

@@ -462,8 +462,20 @@ export class TaskService {
       throw new NotFoundError('Comment not found.');
     }
 
-    if (comment.userId !== userId) {
-      throw new ForbiddenError('You can only delete your own comments.');
+    const isCreator = comment.userId === userId;
+
+    const workspaceMember = await prisma.workspaceMember.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId,
+          workspaceId: comment.task.project.workspaceId,
+        }
+      }
+    });
+    const isAdmin = workspaceMember?.role === 'ADMIN';
+
+    if (!isCreator && !isAdmin) {
+      throw new ForbiddenError('You can only delete your own comments unless you are a Workspace Administrator.');
     }
 
     const workspaceId = comment.task.project.workspaceId;

@@ -250,7 +250,7 @@ const TaskDetails = () => {
                                                 • {format(new Date(comment.createdAt), "dd MMM, HH:mm")}
                                             </span>
                                         </div>
-                                        {comment.userId === user?.id && (
+                                        {(comment.userId === user?.id || isWorkspaceOwner || isWorkspaceAdmin) && (
                                             <button onClick={() => handleDeleteComment(comment.id)} className="text-slate-400 hover:text-red-500 transition-colors">
                                                 <X className="size-3" />
                                             </button>
@@ -364,13 +364,15 @@ const TaskDetails = () => {
                                         >
                                             <Download className="size-3.5" />
                                         </a>
-                                        <button 
-                                            onClick={() => handleDeleteAttachment(file.id)} 
-                                            className="p-1 rounded text-zinc-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
-                                            title="Delete file"
-                                        >
-                                            <Trash2 className="size-3.5" />
-                                        </button>
+                                        {(file.userId === user?.id || isWorkspaceOwner || isWorkspaceAdmin || isTeamLead) && (
+                                            <button 
+                                                onClick={() => handleDeleteAttachment(file.id)} 
+                                                className="p-1 rounded text-zinc-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                                                title="Delete file"
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             ))
