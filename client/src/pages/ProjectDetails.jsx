@@ -7,6 +7,7 @@ import ProjectSettings from "../components/ProjectSettings";
 import CreateTaskDialog from "../components/CreateTaskDialog";
 import ProjectCalendar from "../components/ProjectCalendar";
 import ProjectTasks from "../components/ProjectTasks";
+import ProjectSprints from "../components/ProjectSprints";
 
 import { useProjectDetailsQuery } from "../hooks/useProjects";
 import { Loader2Icon } from "lucide-react";
@@ -106,6 +107,7 @@ export default function ProjectDetail() {
                 <div className="inline-flex flex-wrap max-sm:grid grid-cols-3 gap-2 border border-zinc-200 dark:border-zinc-800 rounded overflow-hidden">
                     {[
                         { key: "tasks", label: "Tasks", icon: FileStackIcon },
+                        { key: "sprints", label: "Sprints", icon: ZapIcon },
                         { key: "calendar", label: "Calendar", icon: CalendarIcon },
                         { key: "analytics", label: "Analytics", icon: BarChart3Icon },
                         { key: "settings", label: "Settings", icon: SettingsIcon },
@@ -121,6 +123,11 @@ export default function ProjectDetail() {
                     {activeTab === "tasks" && (
                         <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
                             <ProjectTasks tasks={tasks} />
+                        </div>
+                    )}
+                    {activeTab === "sprints" && (
+                        <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
+                            <ProjectSprints projectId={id} />
                         </div>
                     )}
                     {activeTab === "analytics" && (

@@ -27,7 +27,7 @@ router.delete('/:id', workspaceRbac([WorkspaceRole.ADMIN]), controller.deleteWor
 
 // Member Management
 router.post('/:workspaceId/members', workspaceRbac([WorkspaceRole.ADMIN]), validateRequest(addWorkspaceMemberSchema), controller.addMember);
-router.delete('/:workspaceId/members/:memberId', workspaceRbac([WorkspaceRole.ADMIN]), controller.removeMember);
+router.delete('/:workspaceId/members/:memberId', workspaceRbac(), controller.removeMember);
 
 // Activity Feed retrieval
 router.get('/:workspaceId/activities', workspaceRbac(), controller.getWorkspaceActivities);

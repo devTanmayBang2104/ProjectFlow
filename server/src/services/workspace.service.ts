@@ -158,6 +158,16 @@ export class WorkspaceService {
    * Invites and adds a user as a member of the workspace.
    */
   public async addMember(workspaceId: string, actorId: string, email: string, role: WorkspaceRole = WorkspaceRole.MEMBER): Promise<any> {
+    const workspaceObj = await prisma.workspace.findUnique({ where: { id: workspaceId } });
+    if (!workspaceObj) {
+      throw new NotFoundError('Workspace not found.');
+    }
+
+    // Only the workspace owner can invite or promote members to ADMIN
+    if (role === WorkspaceRole.ADMIN && workspaceObj.ownerId !== actorId) {
+      throw new ForbiddenError('Only the workspace owner can invite or promote members to Administrator.');
+    }
+
     const targetUser = await prisma.user.findUnique({ where: { email } });
     if (!targetUser) {
       throw new NotFoundError('User with this email address not found. They must sign up for an account first.');
@@ -206,11 +216,10 @@ export class WorkspaceService {
     );
 
     // Send in-app notification to the invited user
-    const workspaceObj = await prisma.workspace.findUnique({ where: { id: workspaceId } });
     await notification.create(
       targetUser.id,
       'Workspace Invitation',
-      `You have been added to the workspace "${workspaceObj?.name || 'Workspace'}"`,
+      `You have been added to the workspace "${workspaceObj.name}"`,
       NotificationType.PROJECT_INVITE,
       'WORKSPACE',
       workspaceId
@@ -232,8 +241,43 @@ export class WorkspaceService {
     }
 
     const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId } });
-    if (workspace?.ownerId === membership.userId) {
+    if (!workspace) {
+      throw new NotFoundError('Workspace not found.');
+    }
+    if (workspace.ownerId === membership.userId) {
       throw new BadRequestError('The workspace owner cannot be removed from the workspace.');
+    }
+
+    const isSelfLeaving = membership.userId === actorId;
+
+    if (!isSelfLeaving) {
+      // Fetch actor's membership role
+      const actorMembership = await prisma.workspaceMember.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId: actorId,
+            workspaceId,
+          }
+        }
+      });
+
+      if (!actorMembership) {
+        throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
+      }
+
+      const isOwner = workspace.ownerId === actorId;
+      const isAdmin = actorMembership.role === WorkspaceRole.ADMIN;
+
+      if (!isOwner && !isAdmin) {
+        throw new ForbiddenError('Access Denied. Only the Owner or an Administrator can remove members.');
+      }
+
+      // If actor is an Admin (but not the owner), check target role
+      if (isAdmin && !isOwner) {
+        if (membership.role === WorkspaceRole.ADMIN) {
+          throw new ForbiddenError('Access Denied. Workspace Administrators cannot remove other Administrators.');
+        }
+      }
     }
 
     await prisma.workspaceMember.delete({ where: { id: memberId } });
@@ -245,7 +289,7 @@ export class WorkspaceService {
       ActivityAction.LEAVE,
       'MEMBER',
       membership.userId,
-      `removed user from workspace`
+      isSelfLeaving ? `left the workspace` : `removed user from workspace`
     );
   }
 }

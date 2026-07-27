@@ -20,7 +20,7 @@ const ProjectOverview = () => {
         HIGH: "border-green-300 text-green-700 dark:border-green-500 dark:text-green-400",
     };
 
-    const { currentWorkspace, isLoading } = useActiveWorkspace();
+    const { currentWorkspace, isAdminOrOwner, isLoading } = useActiveWorkspace();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const projects = currentWorkspace?.projects || [];
 
@@ -46,9 +46,11 @@ const ProjectOverview = () => {
                             <FolderOpen size={32} />
                         </div>
                         <p className="text-zinc-600 dark:text-zinc-400">No projects yet</p>
-                        <button onClick={() => setIsDialogOpen(true)} className="mt-4 px-4 py-2 text-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white dark:text-zinc-200 rounded hover:opacity-90 transition">
-                            Create your First Project
-                        </button>
+                        {isAdminOrOwner && (
+                            <button onClick={() => setIsDialogOpen(true)} className="mt-4 px-4 py-2 text-sm bg-gradient-to-br from-blue-500 to-blue-600 text-white dark:text-zinc-200 rounded hover:opacity-90 transition">
+                                Create your First Project
+                            </button>
+                        )}
                         <CreateProjectDialog isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} />
                     </div>
                 ) : (

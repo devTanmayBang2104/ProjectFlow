@@ -6,10 +6,12 @@ import CreateProjectDialog from "../components/CreateProjectDialog";
 
 import { useProjectsQuery } from "../hooks/useProjects";
 import { Loader2Icon } from "lucide-react";
+import { useActiveWorkspace } from "../hooks/useActiveWorkspace";
 
 export default function Projects() {
     const activeWorkspaceId = useSelector((state) => state.ui.activeWorkspaceId);
     const { data: projects = [], isLoading } = useProjectsQuery(activeWorkspaceId);
+    const { isAdminOrOwner } = useActiveWorkspace();
 
     const [filteredProjects, setFilteredProjects] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
@@ -63,9 +65,11 @@ export default function Projects() {
                     <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-1"> Projects </h1>
                     <p className="text-gray-500 dark:text-zinc-400 text-sm"> Manage and track your projects </p>
                 </div>
-                <button onClick={() => setIsDialogOpen(true)} className="flex items-center px-5 py-2 text-sm rounded bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:opacity-90 transition" >
-                    <Plus className="size-4 mr-2" /> New Project
-                </button>
+                {isAdminOrOwner && (
+                    <button onClick={() => setIsDialogOpen(true)} className="flex items-center px-5 py-2 text-sm rounded bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:opacity-90 transition" >
+                        <Plus className="size-4 mr-2" /> New Project
+                    </button>
+                )}
                 <CreateProjectDialog isDialogOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} />
             </div>
 

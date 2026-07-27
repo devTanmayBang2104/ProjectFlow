@@ -9,11 +9,18 @@ export class SprintController {
   /**
    * Helper to verify user has access to a project's workspace.
    */
-  private async checkProjectAccess(userId: string, projectId: string): Promise<void> {
-    const project = await prisma.project.findUnique({ where: { id: projectId } });
+  private async checkProjectAccess(userId: string, projectId: string, requiredAccess: 'read' | 'write'): Promise<void> {
+    const project = await prisma.project.findUnique({ 
+      where: { id: projectId },
+      include: {
+        members: {
+          select: { userId: true }
+        }
+      }
+    });
     if (!project) throw new NotFoundError('Project not found.');
 
-    const isMember = await prisma.workspaceMember.findUnique({
+    const member = await prisma.workspaceMember.findUnique({
       where: {
         userId_workspaceId: {
           userId,
@@ -22,8 +29,24 @@ export class SprintController {
       }
     });
 
-    if (!isMember) {
-      throw new ForbiddenError('Access Denied. You are not a member of this workspace.');
+    if (!member) {
+      throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
+    }
+
+    const isAdmin = member.role === 'ADMIN';
+    const isTeamLead = project.team_lead === userId;
+
+    if (requiredAccess === 'write') {
+      // Must be Workspace Admin/Owner or Project Team Lead
+      if (!isAdmin && !isTeamLead) {
+        throw new ForbiddenError('Access Denied. Only the Team Lead or an Administrator can modify sprints.');
+      }
+    } else {
+      // Read access: Must be Workspace Admin/Owner, Project Team Lead, or Project Member
+      const isProjectMember = project.members.some((m) => m.userId === userId);
+      if (!isAdmin && !isTeamLead && !isProjectMember) {
+        throw new ForbiddenError('Access Denied. You are not a member of this project.');
+      }
     }
   }
 
@@ -32,7 +55,7 @@ export class SprintController {
       if (!req.user) throw new UnauthorizedError();
       const { projectId } = req.params;
       
-      await this.checkProjectAccess(req.user.id, projectId);
+      await this.checkProjectAccess(req.user.id, projectId, 'read');
       const sprints = await sprintService.getProjectSprints(projectId);
 
       res.status(200).json({
@@ -49,7 +72,7 @@ export class SprintController {
       if (!req.user) throw new UnauthorizedError();
       const { projectId, name, startDate, endDate, status } = req.body;
 
-      await this.checkProjectAccess(req.user.id, projectId);
+      await this.checkProjectAccess(req.user.id, projectId, 'write');
 
       const sprint = await sprintService.createSprint(req.user.id, projectId, {
         name,
@@ -77,7 +100,7 @@ export class SprintController {
       const sprint = await prisma.sprint.findUnique({ where: { id: sprintId } });
       if (!sprint) throw new NotFoundError('Sprint not found.');
 
-      await this.checkProjectAccess(req.user.id, sprint.projectId);
+      await this.checkProjectAccess(req.user.id, sprint.projectId, 'write');
 
       const updated = await sprintService.updateSprint(sprintId, req.user.id, req.body);
 
@@ -99,7 +122,7 @@ export class SprintController {
       const sprint = await prisma.sprint.findUnique({ where: { id: sprintId } });
       if (!sprint) throw new NotFoundError('Sprint not found.');
 
-      await this.checkProjectAccess(req.user.id, sprint.projectId);
+      await this.checkProjectAccess(req.user.id, sprint.projectId, 'write');
 
       await sprintService.deleteSprint(sprintId, req.user.id);
 

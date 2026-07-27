@@ -4,9 +4,11 @@ import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { useProjectDetailsQuery } from "../hooks/useProjects";
 import { useCreateTaskMutation } from "../hooks/useTasks";
+import { useProjectSprintsQuery } from "../hooks/useSprints";
 
 export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, projectId }) {
     const { data: project } = useProjectDetailsQuery(projectId);
+    const { data: sprints = [] } = useProjectSprintsQuery(projectId);
     const teamMembers = project?.members || [];
     const createTaskMutation = useCreateTaskMutation(projectId);
 
@@ -18,6 +20,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
         priority: "MEDIUM",
         assigneeId: "",
         due_date: "",
+        sprintId: "",
     });
 
     const handleSubmit = async (e) => {
@@ -41,6 +44,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                 priority: formData.priority,
                 assigneeId: formData.assigneeId || undefined,
                 due_date: dueISO,
+                sprintId: formData.sprintId || undefined,
             });
 
             toast.dismissAll();
@@ -56,6 +60,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                 priority: "MEDIUM",
                 assigneeId: "",
                 due_date: "",
+                sprintId: "",
             });
         } catch (err) {
             toast.dismissAll();
@@ -174,6 +179,23 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                                 Selected: {format(new Date(formData.due_date), "PPP")}
                             </p>
                         )}
+                    </div>
+
+                    {/* Sprint selection */}
+                    <div className="space-y-1">
+                        <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Sprint (Optional)</label>
+                        <select 
+                            value={formData.sprintId} 
+                            onChange={(e) => setFormData({ ...formData, sprintId: e.target.value })} 
+                            className="w-full rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer" 
+                        >
+                            <option value="">No Sprint (Backlog)</option>
+                            {sprints.map((sprint) => (
+                                <option key={sprint.id} value={sprint.id}>
+                                    {sprint.name} ({sprint.status})
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Footer */}

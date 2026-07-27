@@ -3,6 +3,7 @@ import { ProjectController } from '../controllers/project.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { workspaceRbac } from '../middlewares/rbac.middleware';
 import { validateRequest } from '../middlewares/validator.middleware';
+import { WorkspaceRole } from '@prisma/client';
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -17,7 +18,7 @@ router.use(authMiddleware);
 
 // Workspace-specific project listing & creation
 router.get('/workspace/:workspaceId', workspaceRbac(), controller.getWorkspaceProjects);
-router.post('/', workspaceRbac(), validateRequest(createProjectSchema), controller.createProject);
+router.post('/', workspaceRbac([WorkspaceRole.ADMIN]), validateRequest(createProjectSchema), controller.createProject);
 
 // Single project detail queries & operations
 router.get('/:id', controller.getProjectById);
