@@ -58,7 +58,7 @@ const Navbar = ({ setIsSidebarOpen }) => {
     };
 
     return (
-        <div className="w-full bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-6 xl:px-16 py-3 flex-shrink-0">
+        <div className="sticky top-0 z-40 backdrop-blur-md bg-white/80 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800 px-6 xl:px-16 py-3 flex-shrink-0 w-full">
             <div className="flex items-center justify-between max-w-6xl mx-auto">
                 {/* Left section */}
                 <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -86,12 +86,12 @@ const Navbar = ({ setIsSidebarOpen }) => {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={() => setIsSearchFocused(true)}
                             placeholder="Search projects, tasks..."
-                            className="pl-8 pr-4 py-2 w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-md text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition"
+                            className="pl-8 pr-4 py-2 w-full bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white placeholder-zinc-450 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
                         />
                         {isSearchFocused && searchQuery.trim() !== '' && (
-                            <div className="absolute left-0 mt-2 w-full bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-xl shadow-2xl z-50 overflow-hidden max-h-96 overflow-y-auto py-2">
+                            <div className="absolute left-0 mt-2 w-full bg-white/95 dark:bg-zinc-950/95 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl z-50 overflow-hidden max-h-96 overflow-y-auto py-2 backdrop-blur-sm">
                                 {filteredProjects.length === 0 && filteredTasks.length === 0 ? (
-                                    <div className="px-4 py-3 text-xs text-gray-500 dark:text-zinc-500 text-center">
+                                    <div className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-500 text-center">
                                         No results found for "{searchQuery}"
                                     </div>
                                 ) : (
@@ -150,7 +150,7 @@ const Navbar = ({ setIsSidebarOpen }) => {
                 {/* Right section */}
                 <div className="flex items-center gap-3">
                     {/* Theme Toggle */}
-                    <button onClick={() => dispatch(toggleTheme())} className="size-8 flex items-center justify-center bg-white dark:bg-zinc-800 shadow rounded-lg transition hover:scale-105 active:scale-95 cursor-pointer">
+                    <button onClick={() => dispatch(toggleTheme())} className="size-8 flex items-center justify-center bg-white dark:bg-zinc-800 shadow rounded-lg transition hover:scale-105 active:scale-95 cursor-pointer border border-zinc-200 dark:border-zinc-700 focus:outline-none">
                         {
                             theme === "light"
                                 ? (<MoonIcon className="size-4 text-gray-800 dark:text-gray-200" />)
@@ -162,47 +162,48 @@ const Navbar = ({ setIsSidebarOpen }) => {
                     <div className="relative" ref={menuRef}>
                         <button 
                             onClick={() => setIsMenuOpen((prev) => !prev)}
-                            className="flex items-center justify-center size-8 rounded-full border border-gray-200 dark:border-zinc-800 hover:ring-2 hover:ring-blue-500/50 transition cursor-pointer overflow-hidden focus:outline-none"
+                            className="flex items-center justify-center size-8 rounded-full border border-zinc-200 dark:border-zinc-800 hover:ring-2 hover:ring-blue-500/50 transition cursor-pointer overflow-hidden focus:outline-none"
                         >
                             <img 
                                 src={user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=0284c7&color=fff`} 
                                 alt="User Avatar" 
                                 className="w-full h-full object-cover" 
+                                referrerPolicy="no-referrer"
                             />
                         </button>
-
                         {isMenuOpen && (
-                            <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-zinc-950 border border-gray-100 dark:border-zinc-900 rounded-xl shadow-2xl py-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                            <div className="absolute right-0 mt-2 w-60 bg-white/95 dark:bg-zinc-950/95 border border-zinc-200 dark:border-transparent rounded-xl shadow-2xl py-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 backdrop-blur-sm">
                                 {/* User Info Header */}
                                 <div className="px-4 py-2 flex items-center gap-3">
                                     <img 
                                         src={user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=0284c7&color=fff`} 
                                         alt="User Avatar" 
-                                        className="size-9 rounded-full object-cover ring-2 ring-gray-100 dark:ring-zinc-800 flex-shrink-0" 
+                                        className="size-9 rounded-full object-cover ring-2 ring-zinc-100 dark:ring-zinc-800 flex-shrink-0" 
+                                        referrerPolicy="no-referrer"
                                     />
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-semibold text-gray-800 dark:text-white truncate">
+                                        <p className="text-sm font-semibold text-zinc-800 dark:text-white truncate">
                                             {user?.name || "User"}
                                         </p>
-                                        <p className="text-[10px] text-gray-500 dark:text-zinc-400 truncate">
+                                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
                                             {user?.email || ""}
                                         </p>
                                     </div>
                                 </div>
 
-                                <hr className="border-gray-100/50 dark:border-zinc-900/50 my-2" />
+                                <hr className="border-zinc-200/50 dark:border-zinc-800/50 my-2" />
 
                                 {/* Menu Items */}
                                 <div className="px-1.5">
                                     <button 
                                         onClick={handleSettingsClick}
-                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-750 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-900/85 rounded-lg transition text-left cursor-pointer"
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-750 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900/85 rounded-lg transition text-left cursor-pointer"
                                     >
                                         <Settings className="w-4 h-4 text-zinc-400" />
                                         Manage Account
                                     </button>
 
-                                    <hr className="border-gray-100/50 dark:border-zinc-900/50 my-1.5" />
+                                    <hr className="border-zinc-200/50 dark:border-zinc-800/50 my-1.5" />
 
                                     <button 
                                         onClick={handleLogoutClick}

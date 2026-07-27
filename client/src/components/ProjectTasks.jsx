@@ -127,7 +127,7 @@ const ProjectTasks = ({ tasks }) => {
                         ],
                     };
                     return (
-                        <select key={name} name={name} onChange={handleFilterChange} className=" border bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-800 outline-none px-3 py-1 rounded text-sm text-zinc-900 dark:text-zinc-200 focus:outline-none" >
+                        <select key={name} name={name} onChange={handleFilterChange} className="border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 outline-none px-3 py-1.5 rounded-lg text-sm text-zinc-900 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer transition duration-200" >
                             {options[name].map((opt, idx) => (
                                 <option key={idx} value={opt.value} className="bg-white dark:bg-zinc-900">{opt.label}</option>
                             ))}
@@ -137,29 +137,29 @@ const ProjectTasks = ({ tasks }) => {
 
                 {/* Reset filters */}
                 {(filters.status || filters.type || filters.priority || filters.assignee) && (
-                    <button type="button" onClick={() => setFilters({ status: "", type: "", priority: "", assignee: "" })} className="px-3 py-1 flex items-center gap-2 rounded bg-gradient-to-br from-purple-400 to-purple-500 text-zinc-100 dark:text-zinc-200 text-sm transition-colors" >
+                    <button type="button" onClick={() => setFilters({ status: "", type: "", priority: "", assignee: "" })} className="px-3 py-1.5 flex items-center gap-2 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 text-sm transition-colors cursor-pointer" >
                         <XIcon className="size-3" /> Reset
                     </button>
                 )}
 
                 {canDeleteTasks && selectedTasks.length > 0 && (
-                    <button type="button" onClick={handleDelete} className="px-3 py-1 flex items-center gap-2 rounded bg-gradient-to-br from-indigo-400 to-indigo-500 text-zinc-100 dark:text-zinc-200 text-sm transition-colors" >
+                    <button type="button" onClick={handleDelete} className="px-3 py-1.5 flex items-center gap-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm transition-all cursor-pointer shadow-md shadow-red-500/10" >
                         <Trash className="size-3" /> Delete
                     </button>
                 )}
             </div>
 
             {/* Tasks Table */}
-            <div className="overflow-auto rounded-lg lg:border border-zinc-300 dark:border-zinc-800">
+            <div className="overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/20 backdrop-blur-sm shadow-sm">
                 <div className="w-full">
                     {/* Desktop/Table View */}
                     <div className="hidden lg:block overflow-x-auto">
-                        <table className="min-w-full text-sm text-left not-dark:bg-white text-zinc-900 dark:text-zinc-300">
-                            <thead className="text-xs uppercase dark:bg-zinc-800/70 text-zinc-500 dark:text-zinc-400 ">
+                        <table className="min-w-full text-sm text-left text-zinc-900 dark:text-zinc-300">
+                            <thead className="text-xs uppercase bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
                                 <tr>
                                     {canDeleteTasks && (
-                                        <th className="pl-2 pr-1">
-                                            <input onChange={() => selectedTasks.length > 1 ? setSelectedTasks([]) : setSelectedTasks(tasks.map((t) => t.id))} checked={selectedTasks.length === tasks.length} type="checkbox" className="size-3 accent-zinc-600 dark:accent-zinc-500" />
+                                        <th className="pl-3 pr-1 py-3">
+                                            <input onChange={() => selectedTasks.length > 1 ? setSelectedTasks([]) : setSelectedTasks(tasks.map((t) => t.id))} checked={selectedTasks.length === tasks.length} type="checkbox" className="size-3 accent-zinc-650 dark:accent-zinc-500 cursor-pointer" />
                                         </th>
                                     )}
                                     <th className={`px-4 ${canDeleteTasks ? "pl-0" : "pl-4"} py-3`}>Title</th>
@@ -177,9 +177,9 @@ const ProjectTasks = ({ tasks }) => {
                                         const { background, prioritycolor } = priorityTexts[task.priority] || {};
 
                                         return (
-                                            <tr key={task.id} onClick={() => navigate(`/taskDetails?projectId=${task.projectId}&taskId=${task.id}`)} className=" border-t border-zinc-300 dark:border-zinc-800 group hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all cursor-pointer" >
+                                            <tr key={task.id} onClick={() => navigate(`/taskDetails?projectId=${task.projectId}&taskId=${task.id}`)} className="border-t border-zinc-200 dark:border-zinc-800 group hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-all cursor-pointer" >
                                                 {canDeleteTasks && (
-                                                    <td onClick={e => e.stopPropagation()} className="pl-2 pr-1">
+                                                    <td onClick={e => e.stopPropagation()} className="pl-3 pr-1">
                                                         <input type="checkbox" className="size-3 accent-zinc-600 dark:accent-zinc-500" onChange={() => selectedTasks.includes(task.id) ? setSelectedTasks(selectedTasks.filter((i) => i !== task.id)) : setSelectedTasks((prev) => [...prev, task.id])} checked={selectedTasks.includes(task.id)} />
                                                     </td>
                                                 )}
@@ -196,15 +196,15 @@ const ProjectTasks = ({ tasks }) => {
                                                     </span>
                                                 </td>
                                                 <td onClick={e => e.stopPropagation()} className="px-4 py-2">
-                                                    <select name="status" onChange={(e) => handleStatusChange(task.id, e.target.value)} value={task.status} className="group-hover:ring ring-zinc-100 outline-none px-2 pr-4 py-1 rounded text-sm text-zinc-900 dark:text-zinc-200 cursor-pointer" >
-                                                        <option value="TODO">To Do</option>
-                                                        <option value="IN_PROGRESS">In Progress</option>
-                                                        <option value="DONE">Done</option>
+                                                    <select name="status" onChange={(e) => handleStatusChange(task.id, e.target.value)} value={task.status} className="bg-white/50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 outline-none px-2 pr-4 py-1 rounded text-sm text-zinc-900 dark:text-zinc-200 cursor-pointer focus:ring-1 focus:ring-blue-500" >
+                                                        <option value="TODO" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200">To Do</option>
+                                                        <option value="IN_PROGRESS" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200">In Progress</option>
+                                                        <option value="DONE" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200">Done</option>
                                                     </select>
                                                 </td>
                                                 <td className="px-4 py-2">
                                                     <div className="flex items-center gap-2">
-                                                        <img src={task.assignee?.image} className="size-5 rounded-full" alt="avatar" />
+                                                        <img src={task.assignee?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.assignee?.name || 'U')}`} className="size-5 rounded-full object-cover" alt="avatar" referrerPolicy="no-referrer" />
                                                         {task.assignee?.name || "-"}
                                                     </div>
                                                 </td>
@@ -257,15 +257,15 @@ const ProjectTasks = ({ tasks }) => {
 
                                         <div>
                                             <label className="text-zinc-600 dark:text-zinc-400 text-xs">Status</label>
-                                            <select name="status" onChange={(e) => handleStatusChange(task.id, e.target.value)} value={task.status} className="w-full mt-1 bg-zinc-100 dark:bg-zinc-800 ring-1 ring-zinc-300 dark:ring-zinc-700 outline-none px-2 py-1 rounded text-sm text-zinc-900 dark:text-zinc-200" >
-                                                <option value="TODO">To Do</option>
-                                                <option value="IN_PROGRESS">In Progress</option>
-                                                <option value="DONE">Done</option>
+                                            <select name="status" onChange={(e) => handleStatusChange(task.id, e.target.value)} value={task.status} className="w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 outline-none px-2 py-1 rounded text-sm text-zinc-900 dark:text-zinc-200 cursor-pointer" >
+                                                <option value="TODO" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200">To Do</option>
+                                                <option value="IN_PROGRESS" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200">In Progress</option>
+                                                <option value="DONE" className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200">Done</option>
                                             </select>
                                         </div>
 
                                         <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                            <img src={task.assignee?.image} className="size-5 rounded-full" alt="avatar" />
+                                            <img src={task.assignee?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.assignee?.name || 'U')}`} className="size-5 rounded-full object-cover" alt="avatar" referrerPolicy="no-referrer" />
                                             {task.assignee?.name || "-"}
                                         </div>
 

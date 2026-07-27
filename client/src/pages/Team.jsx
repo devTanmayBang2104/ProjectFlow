@@ -173,6 +173,7 @@ const Team = () => {
                                                     src={user.user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.user.name || 'User')}&background=random`}
                                                     alt={user.user.name}
                                                     className="size-7 rounded-full bg-gray-200 dark:bg-zinc-800 object-cover"
+                                                    referrerPolicy="no-referrer"
                                                 />
                                                 <span className="text-sm text-zinc-800 dark:text-white truncate">
                                                     {user.user?.name || "Unknown User"}
@@ -224,6 +225,7 @@ const Team = () => {
                                                 src={user.user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.user.name || 'User')}&background=random`}
                                                 alt={user.user.name}
                                                 className="size-9 rounded-full bg-gray-200 dark:bg-zinc-800 object-cover"
+                                                referrerPolicy="no-referrer"
                                             />
                                             <div>
                                                 <p className="font-medium text-gray-900 dark:text-white">

@@ -23,7 +23,7 @@ const Dashboard = () => {
                 </div>
 
                 {isAdminOrOwner && (
-                    <button onClick={() => setIsDialogOpen(true)} className="flex items-center gap-2 px-5 py-2 text-sm rounded bg-gradient-to-br from-blue-500 to-blue-600 text-white space-x-2 hover:opacity-90 transition" >
+                    <button onClick={() => setIsDialogOpen(true)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded bg-blue-600 hover:bg-blue-500 text-white transition duration-200 shadow-md shadow-blue-500/10 cursor-pointer" >
                         <Plus size={16} /> New Project
                     </button>
                 )}

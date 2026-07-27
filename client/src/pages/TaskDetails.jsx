@@ -244,6 +244,7 @@ const TaskDetails = () => {
                                                 src={comment.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.name || 'User')}&background=random`} 
                                                 alt="avatar" 
                                                 className="size-5 rounded-full object-cover" 
+                                                referrerPolicy="no-referrer"
                                             />
                                             <span className="font-semibold text-slate-800 dark:text-zinc-200">{comment.user?.name}</span>
                                             <span className="text-[10px] text-slate-400 dark:text-zinc-500">
@@ -317,6 +318,7 @@ const TaskDetails = () => {
                                     src={task.assignee?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.assignee?.name || 'U')}&background=random`} 
                                     className="size-5 rounded-full object-cover" 
                                     alt="avatar" 
+                                    referrerPolicy="no-referrer"
                                  />
                                 <span className="font-medium text-slate-800 dark:text-zinc-250">{task.assignee?.name || "Unassigned"}</span>
                             </div>

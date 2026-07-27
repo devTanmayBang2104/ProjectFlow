@@ -142,6 +142,14 @@ export class AuthService {
       }
     });
 
+    const googleAccount = await prisma.account.findFirst({
+      where: { userId: user.id, provider: 'google' }
+    });
+    const authMethods = ['LOCAL'];
+    if (googleAccount) {
+      authMethods.push('GOOGLE');
+    }
+
     return {
       user: {
         id: user.id,
@@ -149,6 +157,7 @@ export class AuthService {
         email: user.email,
         image: user.image,
         isEmailVerified: user.isEmailVerified,
+        authMethods,
       },
       accessToken,
       refreshToken,
@@ -356,14 +365,12 @@ export class AuthService {
   public async getProfile(userId: string): Promise<any> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        email: true,
-        image: true,
-        isEmailVerified: true,
-        createdAt: true,
+      include: {
+        accounts: {
+          select: {
+            provider: true
+          }
+        },
         preferences: {
           select: {
             theme: true,
@@ -379,7 +386,25 @@ export class AuthService {
       throw new NotFoundError('User profile not found.');
     }
 
-    return user;
+    const authMethods: string[] = [];
+    if (user.passwordHash) {
+      authMethods.push('LOCAL');
+    }
+    if (user.accounts.some(acc => acc.provider === 'google')) {
+      authMethods.push('GOOGLE');
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      image: user.image,
+      isEmailVerified: user.isEmailVerified,
+      createdAt: user.createdAt,
+      authMethods,
+      preferences: user.preferences
+    };
   }
 
   /**
@@ -451,8 +476,17 @@ export class AuthService {
           }
         }
       });
-    } else if (user.deletedAt) {
-      throw new UnauthorizedError('Your account is marked for deletion. Please recover it first.');
+    } else {
+      if (user.deletedAt) {
+        throw new UnauthorizedError('Your account is marked for deletion. Please recover it first.');
+      }
+      // If the user already exists but has no profile picture, update it with Google's profile picture
+      if ((!user.image || user.image === "") && picture) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { image: picture },
+        });
+      }
     }
 
     // 4. Link provider Account if not already present
@@ -492,6 +526,11 @@ export class AuthService {
       }
     });
 
+    const authMethods = ['GOOGLE'];
+    if (user.passwordHash) {
+      authMethods.push('LOCAL');
+    }
+
     return {
       user: {
         id: user.id,
@@ -499,6 +538,7 @@ export class AuthService {
         email: user.email,
         image: user.image,
         isEmailVerified: user.isEmailVerified,
+        authMethods,
       },
       accessToken,
       refreshToken,

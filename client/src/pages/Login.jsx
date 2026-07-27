@@ -54,16 +54,20 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 sm:px-6 lg:px-8 dark:bg-slate-900 transition-colors duration-200">
-      <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-800">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50/50 dark:bg-zinc-950 px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden transition-colors duration-200">
+      {/* Background glowing radial gradients */}
+      <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-purple-500/5 dark:bg-purple-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+      <div className="w-full max-w-md space-y-8 rounded-2xl bg-white/85 dark:bg-zinc-900/30 backdrop-blur-sm p-8 shadow-2xl border border-zinc-200 dark:border-zinc-800/80 relative z-10">
         <div className="text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/20">
             <Kanban className="size-6" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <h2 className="mt-6 text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
             Welcome back
           </h2>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400 font-medium">
             Sign in to manage your workspaces and projects
           </p>
         </div>
@@ -71,7 +75,7 @@ const Login = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="email" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Email address
               </label>
               <input
@@ -79,7 +83,7 @@ const Login = () => {
                 name="email"
                 type="email"
                 required
-                className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white/80 px-3 py-2 text-zinc-900 shadow-sm placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => {
@@ -91,7 +95,7 @@ const Login = () => {
 
             <div>
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label htmlFor="password" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   Password
                 </label>
                 <Link
@@ -106,7 +110,7 @@ const Login = () => {
                 name="password"
                 type="password"
                 required
-                className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white/80 px-3 py-2 text-zinc-900 shadow-sm placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-white"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => {
@@ -121,7 +125,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loginMutation.isPending}
-              className="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 dark:focus:ring-offset-slate-950 transition-all cursor-pointer"
+              className="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 dark:focus:ring-offset-zinc-950 transition-all cursor-pointer"
             >
               {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
             </button>
@@ -129,7 +133,7 @@ const Login = () => {
             {showResend && (
               <div className="rounded-lg bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 mt-2 animate-in fade-in duration-200 text-center">
                 <p className="font-semibold mb-1 text-xs">Email address not verified</p>
-                <p className="mb-3 text-[11px] text-slate-650 dark:text-zinc-400 leading-relaxed">
+                <p className="mb-3 text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
                   Please click the link in your inbox. Need a new verification link?
                 </p>
                 <button
@@ -158,10 +162,10 @@ const Login = () => {
 
         <div className="relative mt-6">
           <div className="absolute inset-0 flex items-center" aria-hidden="true">
-            <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+            <div className="w-full border-t border-zinc-200 dark:border-zinc-800" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+            <span className="bg-white/90 px-2 text-zinc-500 dark:bg-zinc-900/90 dark:text-zinc-400">
               Or continue with
             </span>
           </div>
@@ -171,7 +175,7 @@ const Login = () => {
           <button
             type="button"
             onClick={handleGoogleLogin}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:focus:ring-offset-slate-950 cursor-pointer transition-colors"
+            className="flex w-full items-center justify-center gap-3 rounded-lg border border-zinc-300 bg-white/80 px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:focus:ring-offset-zinc-950 cursor-pointer transition-colors"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -195,7 +199,7 @@ const Login = () => {
           </button>
         </div>
 
-        <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-8 text-center text-sm text-zinc-500 dark:text-zinc-400 font-medium">
           Not registered?{' '}
           <Link
             to="/register"

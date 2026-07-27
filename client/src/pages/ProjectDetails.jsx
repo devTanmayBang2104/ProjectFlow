@@ -73,12 +73,12 @@ export default function ProjectDetail() {
                     </div>
                 </div>
                 {project.status !== "COMPLETED" && project.status !== "CANCELLED" ? (
-                    <button onClick={() => setShowCreateTask(true)} className="flex items-center gap-2 px-5 py-2 text-sm rounded bg-gradient-to-br from-blue-500 to-blue-600 text-white cursor-pointer" >
+                    <button onClick={() => setShowCreateTask(true)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded bg-blue-600 hover:bg-blue-500 text-white cursor-pointer shadow-md shadow-blue-500/10 transition duration-200" >
                         <PlusIcon className="size-4" />
                         New Task
                     </button>
                 ) : (
-                    <div className="px-4 py-2 text-xs font-semibold rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-550 select-none">
+                    <div className="px-4 py-2 text-xs font-semibold rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-550 select-none">
                         Project {project.status === "COMPLETED" ? "Completed" : "Cancelled"}
                     </div>
                 )}
@@ -88,14 +88,14 @@ export default function ProjectDetail() {
             <div className="grid grid-cols-2 sm:flex flex-wrap gap-6">
                 {[
                     { label: "Total Tasks", value: tasks.length, color: "text-zinc-900 dark:text-white" },
-                    { label: "Completed", value: tasks.filter((t) => t.status === "DONE").length, color: "text-emerald-700 dark:text-emerald-400" },
-                    { label: "In Progress", value: tasks.filter((t) => t.status === "IN_PROGRESS" || t.status === "TODO").length, color: "text-amber-700 dark:text-amber-400" },
-                    { label: "Team Members", value: project.members?.length || 0, color: "text-blue-700 dark:text-blue-400" },
+                    { label: "Completed", value: tasks.filter((t) => t.status === "DONE").length, color: "text-emerald-600 dark:text-emerald-400" },
+                    { label: "In Progress", value: tasks.filter((t) => t.status === "IN_PROGRESS" || t.status === "TODO").length, color: "text-amber-600 dark:text-amber-400" },
+                    { label: "Team Members", value: project.members?.length || 0, color: "text-blue-600 dark:text-blue-400" },
                 ].map((card, idx) => (
-                    <div key={idx} className=" dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-200 dark:border-zinc-800 flex justify-between sm:min-w-60 p-4 py-2.5 rounded">
+                    <div key={idx} className="bg-white/80 dark:bg-zinc-900/30 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 flex justify-between sm:min-w-60 p-4 py-2.5 rounded-xl shadow-sm hover:scale-[1.01] hover:border-zinc-300 dark:hover:border-zinc-750 transition duration-200">
                         <div>
-                            <div className="text-sm text-zinc-600 dark:text-zinc-400">{card.label}</div>
-                            <div className={`text-2xl font-bold ${card.color}`}>{card.value}</div>
+                            <div className="text-sm text-zinc-555 dark:text-zinc-400 font-medium">{card.label}</div>
+                            <div className={`text-2xl font-extrabold ${card.color}`}>{card.value}</div>
                         </div>
                         <ZapIcon className={`size-4 ${card.color}`} />
                     </div>
@@ -104,7 +104,7 @@ export default function ProjectDetail() {
 
             {/* Tabs */}
             <div>
-                <div className="inline-flex flex-wrap max-sm:grid grid-cols-3 gap-2 border border-zinc-200 dark:border-zinc-800 rounded overflow-hidden">
+                <div className="inline-flex flex-wrap max-sm:grid grid-cols-3 gap-1.5 border border-zinc-200 dark:border-zinc-800 p-1.5 rounded-xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm shadow-sm">
                     {[
                         { key: "tasks", label: "Tasks", icon: FileStackIcon },
                         { key: "sprints", label: "Sprints", icon: ZapIcon },
@@ -112,7 +112,7 @@ export default function ProjectDetail() {
                         { key: "analytics", label: "Analytics", icon: BarChart3Icon },
                         { key: "settings", label: "Settings", icon: SettingsIcon },
                     ].map((tabItem) => (
-                        <button key={tabItem.key} onClick={() => { setActiveTab(tabItem.key); setSearchParams({ id: id, tab: tabItem.key }) }} className={`flex items-center gap-2 px-4 py-2 text-sm transition-all ${activeTab === tabItem.key ? "bg-zinc-100 dark:bg-zinc-800/80" : "hover:bg-zinc-50 dark:hover:bg-zinc-700"}`} >
+                        <button key={tabItem.key} onClick={() => { setActiveTab(tabItem.key); setSearchParams({ id: id, tab: tabItem.key }) }} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tabItem.key ? "bg-blue-600 text-white shadow-md shadow-blue-600/10" : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-850/60"}`} >
                             <tabItem.icon className="size-3.5" />
                             {tabItem.label}
                         </button>

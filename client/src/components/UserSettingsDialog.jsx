@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Shield, AlertTriangle, Key } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { closeModal } from '../features/uiSlice';
@@ -13,6 +14,7 @@ import {
 
 const UserSettingsDialog = () => {
     const dispatch = useDispatch();
+    const queryClient = useQueryClient();
     const isOpen = useSelector((state) => state.ui.modals.settings);
     const { data: user } = useProfile();
 
@@ -22,6 +24,7 @@ const UserSettingsDialog = () => {
     const deleteAccountPermanentlyMutation = useDeleteAccountPermanently();
 
     const [activeTab, setActiveTab] = useState('profile');
+    const [isCreatingPassword, setIsCreatingPassword] = useState(false);
 
     const [profileForm, setProfileForm] = useState({
         name: '',
@@ -45,7 +48,8 @@ const UserSettingsDialog = () => {
                 username: user.username || '',
             });
         }
-    }, [user, isOpen]);
+        setIsCreatingPassword(false);
+    }, [user, isOpen, activeTab]);
 
     const handleProfileSubmit = async (e) => {
         e.preventDefault();
@@ -70,27 +74,42 @@ const UserSettingsDialog = () => {
 
     const handlePasswordSubmit = async (e) => {
         e.preventDefault();
-        if (!passwordForm.currentPassword || !passwordForm.newPassword) {
-            toast.error('All password fields are required.');
-            return;
+        const hasLocal = user?.authMethods?.includes('LOCAL');
+
+        if (hasLocal) {
+            if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+                toast.error('All password fields are required.');
+                return;
+            }
+        } else {
+            if (!passwordForm.newPassword) {
+                toast.error('New password is required.');
+                return;
+            }
         }
+
         if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
             toast.error('New passwords do not match.');
             return;
         }
-        if (passwordForm.newPassword.length < 6) {
-            toast.error('Password must be at least 6 characters long.');
+        if (passwordForm.newPassword.length < 8) {
+            toast.error('Password must be at least 8 characters long.');
             return;
         }
 
         try {
-            toast.loading('Changing password...');
+            toast.loading(hasLocal ? 'Changing password...' : 'Creating password...');
             await changePasswordMutation.mutateAsync({
-                currentPassword: passwordForm.currentPassword,
+                currentPassword: hasLocal ? passwordForm.currentPassword : undefined,
                 newPassword: passwordForm.newPassword,
             });
             toast.dismissAll();
-            toast.success('Password changed successfully!');
+            toast.success(hasLocal ? 'Password changed successfully!' : 'Password created successfully!');
+            
+            // Invalidate profile query to refetch immediately
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            
+            setIsCreatingPassword(false);
             setPasswordForm({
                 currentPassword: '',
                 newPassword: '',
@@ -98,7 +117,7 @@ const UserSettingsDialog = () => {
             });
         } catch (err) {
             toast.dismissAll();
-            toast.error(err.response?.data?.error?.message || err.message || 'Failed to change password.');
+            toast.error(err.response?.data?.error?.message || err.message || 'Failed to update password.');
         }
     };
 
@@ -237,56 +256,114 @@ const UserSettingsDialog = () => {
                         )}
 
                         {/* Tab 2: Security */}
-                        {activeTab === 'security' && (
-                            <div>
-                                <h3 className="text-md font-bold mb-1">Change Password</h3>
-                                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">Ensure your account is using a secure and robust password.</p>
+                        {activeTab === 'security' && (() => {
+                            const hasLocal = user?.authMethods?.includes('LOCAL');
+                            const hasGoogle = user?.authMethods?.includes('GOOGLE');
 
-                                <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Current Password</label>
-                                        <input 
-                                            type="password" 
-                                            value={passwordForm.currentPassword} 
-                                            onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })} 
-                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
-                                            required 
-                                        />
+                            if (hasGoogle && !hasLocal && !isCreatingPassword) {
+                                return (
+                                    <div className="space-y-6">
+                                        <h3 className="text-md font-bold mb-1">Security</h3>
+                                        
+                                        <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4 flex items-start gap-3 max-w-md">
+                                            <div className="mt-0.5 text-blue-600 dark:text-blue-400">
+                                                <Shield className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">Google Authentication</p>
+                                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-relaxed font-medium">
+                                                    You signed in with Google. Your password is managed by Google.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 max-w-md leading-relaxed font-medium">
+                                                To log in using your email and a password instead, you can create a local password for your account.
+                                            </p>
+                                            <button
+                                                onClick={() => setIsCreatingPassword(true)}
+                                                className="px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded transition cursor-pointer"
+                                            >
+                                                Create Password
+                                            </button>
+                                        </div>
                                     </div>
+                                );
+                            }
 
-                                    <div>
-                                        <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">New Password</label>
-                                        <input 
-                                            type="password" 
-                                            value={passwordForm.newPassword} 
-                                            onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} 
-                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
-                                            required 
-                                        />
-                                    </div>
+                            return (
+                                <div>
+                                    <h3 className="text-md font-bold mb-1">{hasLocal ? 'Change Password' : 'Create Password'}</h3>
+                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">
+                                        {hasLocal 
+                                            ? 'Ensure your account is using a secure and robust password.' 
+                                            : 'Set a secure password to sign in via email/password alongside Google OAuth.'
+                                        }
+                                    </p>
 
-                                    <div>
-                                        <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Confirm New Password</label>
-                                        <input 
-                                            type="password" 
-                                            value={passwordForm.confirmNewPassword} 
-                                            onChange={(e) => setPasswordForm({ ...passwordForm, confirmNewPassword: e.target.value })} 
-                                            className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
-                                            required 
-                                        />
-                                    </div>
+                                    <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
+                                        {hasLocal && (
+                                            <div>
+                                                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Current Password</label>
+                                                <input 
+                                                    type="password" 
+                                                    value={passwordForm.currentPassword} 
+                                                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })} 
+                                                    className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                                    required 
+                                                />
+                                            </div>
+                                        )}
 
-                                    <button 
-                                        type="submit" 
-                                        disabled={changePasswordMutation.isPending}
-                                        className="px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded transition cursor-pointer disabled:opacity-50 mt-2 flex items-center gap-1.5"
-                                    >
-                                        <Key className="w-3.5 h-3.5" />
-                                        {changePasswordMutation.isPending ? 'Updating...' : 'Change Password'}
-                                    </button>
-                                </form>
-                            </div>
-                        )}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">{hasLocal ? 'New Password' : 'Password'}</label>
+                                            <input 
+                                                type="password" 
+                                                value={passwordForm.newPassword} 
+                                                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} 
+                                                className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                                required 
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Confirm {hasLocal ? 'New Password' : 'Password'}</label>
+                                            <input 
+                                                type="password" 
+                                                value={passwordForm.confirmNewPassword} 
+                                                onChange={(e) => setPasswordForm({ ...passwordForm, confirmNewPassword: e.target.value })} 
+                                                className="w-full px-3 py-2 rounded bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                                                required 
+                                            />
+                                        </div>
+
+                                        <div className="flex gap-3">
+                                            <button 
+                                                type="submit" 
+                                                disabled={changePasswordMutation.isPending}
+                                                className="px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded transition cursor-pointer disabled:opacity-50 mt-2 flex items-center gap-1.5"
+                                            >
+                                                <Key className="w-3.5 h-3.5" />
+                                                {changePasswordMutation.isPending 
+                                                    ? (hasLocal ? 'Updating...' : 'Creating...') 
+                                                    : (hasLocal ? 'Change Password' : 'Create Password')
+                                                }
+                                            </button>
+                                            {!hasLocal && (
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setIsCreatingPassword(false)}
+                                                    className="px-4 py-2 text-xs font-semibold border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded transition cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900 mt-2"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            )}
+                                        </div>
+                                    </form>
+                                </div>
+                            );
+                        })()}
 
                         {/* Tab 3: Danger Zone */}
                         {activeTab === 'danger' && (

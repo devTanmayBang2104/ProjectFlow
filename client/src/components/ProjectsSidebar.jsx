@@ -43,10 +43,10 @@ const ProjectSidebar = () => {
             <div className="space-y-1 px-3">
                 {projects.map((project) => (
                     <div key={project.id}>
-                        <button onClick={() => toggleProject(project.id)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white" >
-                            <ChevronRightIcon className={`size-3 text-gray-500 dark:text-zinc-400 transition-transform duration-200 ${expandedProjects.has(project.id) && 'rotate-90'}`} />
-                            <div className="size-2 rounded-full bg-blue-500" />
-                            <span className="truncate max-w-40 text-sm">{project.name}</span>
+                        <button onClick={() => toggleProject(project.id)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900/40 hover:text-zinc-900 dark:hover:text-white" >
+                            <ChevronRightIcon className={`size-3 text-zinc-500 dark:text-zinc-400 transition-transform duration-200 ${expandedProjects.has(project.id) && 'rotate-90'}`} />
+                            <div className="size-2 rounded-full bg-blue-500 shadow-sm shadow-blue-500/20" />
+                            <span className="truncate max-w-40 text-sm font-medium">{project.name}</span>
                         </button>
 
                         {expandedProjects.has(project.id) && (
@@ -59,7 +59,7 @@ const ProjectSidebar = () => {
                                         searchParams.get('tab') === subItem.title.toLowerCase();
 
                                     return (
-                                        <Link key={subItem.title} to={subItem.url} className={`flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors duration-200 text-xs ${isActive ? 'bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20' : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800'}`} >
+                                        <Link key={subItem.title} to={subItem.url} className={`flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors duration-200 text-xs font-medium ${isActive ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-l border-blue-500/50 pl-2.5' : 'text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-zinc-900/30'}`} >
                                             <subItem.icon className="size-3" />
                                             {subItem.title}
                                         </Link>

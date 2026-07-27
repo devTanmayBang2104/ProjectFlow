@@ -51,8 +51,8 @@ export class UserService {
    * Changes the user's password. Revokes all other active sessions for safety.
    */
   public async changePassword(userId: string, currentPassword?: string, newPassword?: string, currentSessionId?: string): Promise<void> {
-    if (!currentPassword || !newPassword) {
-      throw new BadRequestError('Current password and new password are required.');
+    if (!newPassword) {
+      throw new BadRequestError('New password is required.');
     }
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -62,6 +62,9 @@ export class UserService {
 
     // Verify current password (if user has a password set)
     if (user.passwordHash) {
+      if (!currentPassword) {
+        throw new BadRequestError('Current password is required.');
+      }
       const isPasswordValid = await comparePassword(currentPassword, user.passwordHash);
       if (!isPasswordValid) {
         throw new UnauthorizedError('Incorrect current password.');

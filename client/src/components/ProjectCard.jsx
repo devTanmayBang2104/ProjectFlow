@@ -10,7 +10,7 @@ const statusColors = {
 
 const ProjectCard = ({ project }) => {
     return (
-        <Link to={`/projectsDetail?id=${project.id}&tab=tasks`} className="bg-white dark:bg-zinc-950 dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 rounded-lg p-5 transition-all duration-200 group">
+        <Link to={`/projectsDetail?id=${project.id}&tab=tasks`} className="bg-white/80 dark:bg-zinc-900/30 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-750 rounded-xl p-5 transition-all duration-200 hover:scale-[1.01] hover:shadow-md dark:hover:shadow-none group">
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
