@@ -36,6 +36,7 @@ ProjectFlow is a production-ready, full-stack, multi-tenant workspace and projec
   * Hashed database session storage with **Refresh Token Rotation (RTR)** to detect and revoke hijacked session replays.
   * Double-Submit CSRF cookie checking to secure state-modifying requests.
   * Brute-force protection: locks accounts for 15 minutes after 5 failed login attempts.
+  * IP-based Rate Limiting (express-rate-limit) with strict policies for authentication endpoints.
   * Google OAuth 2.0 sign-in support.
 * **Workspace & Project Team Controls**: Invite workspace members globally and link them to projects with active member removal tools.
 * **Activity Audit Logs & Live Alerts**: Track user actions in workspace timelines and deliver real-time notifications synced instantly via Socket.IO room subscriptions.
