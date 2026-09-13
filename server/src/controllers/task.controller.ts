@@ -326,7 +326,7 @@ export class TaskController {
         where: {
           userId_workspaceId: {
             userId: req.user.id,
-            workspaceId: comment.task.project.workspaceId,
+            workspaceId: (comment as any).task.project.workspaceId,
           }
         }
       });

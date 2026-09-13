@@ -61,9 +61,9 @@ export class TaskService {
         status: data.status || TaskStatus.TODO,
         type: data.type || TaskType.TASK,
         priority: data.priority || Priority.MEDIUM,
-        assigneeId: hasAssignee ? data.assigneeId : null,
+        assigneeId: (hasAssignee ? data.assigneeId : null) as any,
         due_date: new Date(data.due_date),
-        sprintId: data.sprintId || null,
+        sprintId: (data.sprintId ? data.sprintId : null) as any,
         labels: data.labelIds ? {
           connect: data.labelIds.map((id) => ({ id }))
         } : undefined,

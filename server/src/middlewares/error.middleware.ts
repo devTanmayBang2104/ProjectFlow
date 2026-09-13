@@ -20,7 +20,7 @@ export const errorHandler: ErrorRequestHandler = (
       success: false,
       error: {
         message: 'Validation Error',
-        details: err.errors.map((e) => ({
+        details: (err.issues || (err as any).errors || []).map((e: any) => ({
           field: e.path.join('.'),
           message: e.message,
         })),

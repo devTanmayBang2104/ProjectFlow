@@ -93,7 +93,7 @@ export class WorkspaceController {
   public deleteWorkspace = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user) throw new UnauthorizedError();
-      const workspaceId = req.params.id;
+      const workspaceId = req.params.id as string;
 
       await workspaceService.deleteWorkspace(workspaceId, req.user.id);
 
@@ -109,7 +109,7 @@ export class WorkspaceController {
   public addMember = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user) throw new UnauthorizedError();
-      const { workspaceId } = req.params;
+      const workspaceId = req.params.workspaceId as string;
       const { email, role } = req.body;
 
       const member = await workspaceService.addMember(workspaceId, req.user.id, email, role);
@@ -127,7 +127,8 @@ export class WorkspaceController {
   public removeMember = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user) throw new UnauthorizedError();
-      const { workspaceId, memberId } = req.params;
+      const workspaceId = req.params.workspaceId as string;
+      const memberId = req.params.memberId as string;
 
       await workspaceService.removeMember(workspaceId, req.user.id, memberId);
 
@@ -142,7 +143,7 @@ export class WorkspaceController {
 
   public getWorkspaceActivities = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { workspaceId } = req.params;
+      const workspaceId = req.params.workspaceId as string;
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 20;
 

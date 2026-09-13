@@ -50,6 +50,7 @@ export class ProjectController {
   public getProjectById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user) throw new UnauthorizedError();
+      const userId = req.user.id;
       const projectId = req.params.id;
 
       // 1. Fetch project to extract workspaceId and project members
@@ -63,7 +64,7 @@ export class ProjectController {
       const isMember = await prisma.workspaceMember.findUnique({
         where: {
           userId_workspaceId: {
-            userId: req.user.id,
+            userId,
             workspaceId: project.workspaceId,
           }
         }
@@ -72,14 +73,14 @@ export class ProjectController {
 
       // 3. For workspace MEMBERS, enforce project membership or team lead checks
       if (isMember.role === WorkspaceRole.MEMBER) {
-        const isTeamLead = project.team_lead === req.user.id;
-        const isProjMember = project.members.some((m) => m.userId === req.user.id);
+        const isTeamLead = project.team_lead === userId;
+        const isProjMember = project.members.some((m: any) => m.userId === userId);
         if (!isTeamLead && !isProjMember) {
           throw new ForbiddenError('Access Denied. You are not a member of this project.');
         }
       }
 
-      const detailedProject = await projectService.getProjectById(projectId, req.user.id);
+      const detailedProject = await projectService.getProjectById(projectId, userId);
 
       res.status(200).json({
         success: true,
