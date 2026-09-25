@@ -3,6 +3,7 @@ import { TaskStatus, TaskType, Priority } from '@prisma/client';
 
 export const createTaskSchema = z.object({
   body: z.object({
+    projectId: z.string().optional(),
     title: z.string().min(2, 'Task title must be at least 2 characters long'),
     description: z.string().optional(),
     status: z.enum([TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.DONE]).optional(),
@@ -14,10 +15,10 @@ export const createTaskSchema = z.object({
       TaskType.OTHER,
     ]).optional(),
     priority: z.enum([Priority.LOW, Priority.MEDIUM, Priority.HIGH]).optional(),
-    assigneeId: z.string().uuid('Assignee must be a valid User ID'),
-    due_date: z.string().datetime('Invalid due date format'),
-    sprintId: z.string().uuid('Sprint ID must be a valid UUID').optional(),
-    labelIds: z.array(z.string().uuid('Label ID must be a valid UUID')).optional(),
+    assigneeId: z.string().optional().nullable().or(z.literal('')),
+    due_date: z.string().min(1, 'Due date is required'),
+    sprintId: z.string().optional().nullable().or(z.literal('')),
+    labelIds: z.array(z.string()).optional(),
   }),
 });
 

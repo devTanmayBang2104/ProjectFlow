@@ -11,6 +11,9 @@ export class TaskController {
    * Helper to verify user has access to a project's workspace.
    */
   private async checkProjectAccess(userId: string, projectId: string): Promise<void> {
+    if (!projectId) {
+      throw new BadRequestError('Project identifier (projectId) is required to create a task.');
+    }
     const project = await prisma.project.findUnique({ 
       where: { id: projectId },
       include: {

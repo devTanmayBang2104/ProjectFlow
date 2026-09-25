@@ -30,11 +30,19 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
             return;
         }
 
+        if (!projectId) {
+            toast.error("Please select a project before creating a task.");
+            return;
+        }
+
+        if (!formData.due_date) {
+            toast.error("Please select a due date for the task.");
+            return;
+        }
+
         try {
             toast.loading("Creating task...");
-            const dueISO = formData.due_date 
-                ? new Date(formData.due_date).toISOString() 
-                : undefined;
+            const dueISO = new Date(formData.due_date).toISOString();
 
             await createTaskMutation.mutateAsync({
                 title: formData.title,
