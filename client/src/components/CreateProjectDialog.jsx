@@ -11,8 +11,9 @@ import apiClient from "../api/apiClient";
 const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
     const dispatch = useDispatch();
     const { activeWorkspaceId, currentWorkspace, isLoading } = useActiveWorkspace();
+    const resolvedWorkspaceId = activeWorkspaceId || currentWorkspace?.id;
     const { data: user } = useProfile();
-    const createProjectMutation = useCreateProjectMutation(activeWorkspaceId);
+    const createProjectMutation = useCreateProjectMutation(resolvedWorkspaceId);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -55,6 +56,11 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
             return;
         }
 
+        if (!resolvedWorkspaceId) {
+            toast.error("Please select or create an active workspace first.");
+            return;
+        }
+
         try {
             toast.loading("Creating project...");
             
@@ -70,6 +76,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
 
             // 1. Create the project
             const newProject = await createProjectMutation.mutateAsync({
+                workspaceId: resolvedWorkspaceId,
                 name: formData.name,
                 description: formData.description || undefined,
                 status: formData.status,
@@ -127,7 +134,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
     }
 
     // 2. EMPTY STATE: If there is no active workspace selected (after loading), prompt them to create one
-    if (!activeWorkspaceId) {
+    if (!resolvedWorkspaceId) {
         return (
             <div className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur flex items-center justify-center text-left z-50 p-4">
                 <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 w-full max-w-md text-zinc-900 dark:text-zinc-200 relative shadow-2xl text-center">
@@ -342,7 +349,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                         </button>
                         <button 
                             type="submit"
-                            disabled={createProjectMutation.isPending || !activeWorkspaceId} 
+                            disabled={createProjectMutation.isPending || !resolvedWorkspaceId} 
                             className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500 transition disabled:opacity-50 cursor-pointer text-xs font-semibold" 
                         >
                             {createProjectMutation.isPending ? "Creating..." : "Create Project"}

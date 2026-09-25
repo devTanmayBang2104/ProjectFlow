@@ -3,6 +3,7 @@ import { Priority, ProjectStatus } from '@prisma/client';
 
 export const createProjectSchema = z.object({
   body: z.object({
+    workspaceId: z.string().uuid('Workspace ID must be a valid UUID'),
     name: z.string().min(2, 'Project name must be at least 2 characters long'),
     description: z.string().optional(),
     priority: z.enum([Priority.LOW, Priority.MEDIUM, Priority.HIGH]).optional(),

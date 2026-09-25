@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { TaskService } from '../services/task.service';
-import { UnauthorizedError, ForbiddenError, NotFoundError } from '../utils/errors';
+import { UnauthorizedError, ForbiddenError, NotFoundError, BadRequestError } from '../utils/errors';
 import prisma from '../config/db';
 import { UploadService } from '../services/cloudinary.service';
 

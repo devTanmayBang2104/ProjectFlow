@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ProjectService } from '../services/project.service';
-import { UnauthorizedError, ForbiddenError, NotFoundError } from '../utils/errors';
+import { UnauthorizedError, ForbiddenError, NotFoundError, BadRequestError } from '../utils/errors';
 import prisma from '../config/db';
 import { WorkspaceRole } from '@prisma/client';
 
@@ -26,6 +26,10 @@ export class ProjectController {
     try {
       if (!req.user) throw new UnauthorizedError();
       const { workspaceId, name, description, priority, status, start_date, end_date, team_lead } = req.body;
+
+      if (!workspaceId) {
+        throw new BadRequestError('Workspace ID is required to create a project.');
+      }
 
       const project = await projectService.createProject(req.user.id, workspaceId, {
         name,

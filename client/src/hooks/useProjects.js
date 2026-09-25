@@ -38,16 +38,22 @@ export const useCreateProjectMutation = (workspaceId) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (projectData) => {
+      const targetWorkspaceId = projectData.workspaceId || workspaceId;
       const response = await apiClient.post('/projects', {
         ...projectData,
-        workspaceId,
+        workspaceId: targetWorkspaceId,
       });
       return response.data.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['projects', workspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['workspace', workspaceId] });
-      queryClient.setQueryData(['project', data.id], data);
+      const targetWs = data?.workspaceId || workspaceId;
+      if (targetWs) {
+        queryClient.invalidateQueries({ queryKey: ['projects', targetWs] });
+        queryClient.invalidateQueries({ queryKey: ['workspace', targetWs] });
+      }
+      if (data?.id) {
+        queryClient.setQueryData(['project', data.id], data);
+      }
     },
   });
 };

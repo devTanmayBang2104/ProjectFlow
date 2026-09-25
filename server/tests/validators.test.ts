@@ -88,6 +88,7 @@ describe("Zod Validation Schemas", () => {
     it("should validate project creation schema requiring team_lead UUID", () => {
       const validProject = createProjectSchema.safeParse({
         body: {
+          workspaceId: "123e4567-e89b-12d3-a456-426614174001",
           name: "ProjectFlow Web App",
           description: "Full stack agile workspace",
           priority: "HIGH",
