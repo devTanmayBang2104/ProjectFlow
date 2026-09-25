@@ -10,25 +10,17 @@ import { useProfile } from "../hooks/useAuth";
 import { 
   useTaskDetailsQuery, useAddCommentMutation, useDeleteCommentMutation,
   useAddSubtaskMutation, useUpdateSubtaskMutation, useDeleteSubtaskMutation,
-  useUploadAttachmentMutation, useDeleteAttachmentMutation 
+  useUploadAttachmentMutation, useDeleteAttachmentMutation, useDeleteTaskMutation 
 } from "../hooks/useTasks";
 
 const TaskDetails = () => {
     const [searchParams] = useSearchParams();
     const taskId = searchParams.get("taskId");
+    const projectIdParam = searchParams.get("projectId");
     const navigate = useNavigate();
 
     const { data: user } = useProfile();
     const { data: task, isLoading: isTaskLoading } = useTaskDetailsQuery(taskId);
-
-    console.log("[DEBUG COMPONENT] TaskDetails rendered:", {
-        taskId,
-        user: user ? { id: user.id, email: user.email } : null,
-        taskExists: !!task,
-        isTaskLoading,
-        commentsCount: task?.comments?.length || 0,
-        subtasksCount: task?.subtasks?.length || 0,
-    });
 
     const [newComment, setNewComment] = useState("");
     const [newSubtask, setNewSubtask] = useState("");
@@ -42,6 +34,7 @@ const TaskDetails = () => {
     const deleteSubtaskMutation = useDeleteSubtaskMutation(taskId);
     const uploadAttachmentMutation = useUploadAttachmentMutation(taskId);
     const deleteAttachmentMutation = useDeleteAttachmentMutation(taskId);
+    const deleteTaskMutation = useDeleteTaskMutation(task?.projectId || projectIdParam);
 
     const handleAddComment = async () => {
         if (!newComment.trim()) return;
@@ -131,6 +124,20 @@ const TaskDetails = () => {
             await deleteAttachmentMutation.mutateAsync(attachmentId);
             toast.dismissAll();
             toast.success("Attachment removed.");
+        } catch (error) {
+            toast.dismissAll();
+            toast.error(error?.response?.data?.error?.message || error.message);
+        }
+    };
+
+    const handleDeleteTask = async () => {
+        if (!window.confirm(`Are you sure you want to permanently delete task "${task?.title}"?`)) return;
+        try {
+            toast.loading("Deleting task...");
+            await deleteTaskMutation.mutateAsync(taskId);
+            toast.dismissAll();
+            toast.success("Task deleted successfully.");
+            navigate(`/projectsDetail?id=${task?.projectId || projectIdParam}&tab=tasks`);
         } catch (error) {
             toast.dismissAll();
             toast.error(error?.response?.data?.error?.message || error.message);
@@ -333,6 +340,18 @@ const TaskDetails = () => {
                             </div>
                         </div>
                     </div>
+
+                    {hasChecklistPermission && (
+                        <div className="mt-4 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                            <button
+                                onClick={handleDeleteTask}
+                                disabled={deleteTaskMutation.isPending}
+                                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold transition-colors cursor-pointer"
+                            >
+                                <Trash2 className="size-3.5" /> Delete Task
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Attachments Section */}
