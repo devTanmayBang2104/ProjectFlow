@@ -3,6 +3,7 @@ import { Priority, ProjectStatus, ActivityAction, NotificationType } from '@pris
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { ActivityLogService } from './activity.service';
 import { NotificationService } from './notification.service';
+import { SocketService } from './socket.service';
 
 const activityLog = new ActivityLogService();
 const notification = new NotificationService();
@@ -153,6 +154,9 @@ export class ProjectService {
         project.id
       );
     }
+
+    // Broadcast real-time project creation to workspace room
+    SocketService.broadcastProjectUpdate(workspaceId, project.id, 'create', project);
 
     return project;
   }
@@ -313,6 +317,9 @@ export class ProjectService {
       projectId
     );
 
+    // Broadcast real-time project update to workspace room
+    SocketService.broadcastProjectUpdate(project.workspaceId, projectId, 'update', updated);
+
     return updated;
   }
 
@@ -335,6 +342,12 @@ export class ProjectService {
       projectId,
       `deleted project "${project.name}"`
     );
+
+    // Broadcast real-time project deletion to workspace room
+    SocketService.broadcastProjectUpdate(project.workspaceId, projectId, 'delete', {
+      id: projectId,
+      workspaceId: project.workspaceId,
+    });
   }
 
   /**
@@ -406,6 +419,12 @@ export class ProjectService {
       projectId
     );
 
+    // Broadcast real-time project member addition
+    SocketService.broadcastProjectUpdate(project.workspaceId, projectId, 'update', {
+      id: projectId,
+      memberAdded: userId,
+    });
+
     return member;
   }
 
@@ -440,5 +459,11 @@ export class ProjectService {
       `removed a member from project "${project.name}"`,
       projectId
     );
+
+    // Broadcast real-time project member removal
+    SocketService.broadcastProjectUpdate(project.workspaceId, projectId, 'update', {
+      id: projectId,
+      memberRemoved: userId,
+    });
   }
 }

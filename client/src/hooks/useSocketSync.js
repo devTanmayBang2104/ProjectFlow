@@ -71,6 +71,26 @@ export const useSocketSync = () => {
       queryClient.invalidateQueries({ queryKey: ['workspace'] });
     });
 
+    // 4. Project Created, Updated, or Deleted
+    socket.on('project:changed', ({ projectId, action, projectData }) => {
+      console.log('[DEBUG CLIENT SOCKET] project:changed received for projectId:', projectId, 'action:', action, 'projectData:', projectData);
+      
+      // Invalidate project list for the workspace so the Projects page refreshes instantly
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      
+      // Invalidate specific project details
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['project'] });
+
+      // Invalidate active workspace so sidebar and dashboard project counters update
+      if (activeWorkspaceId) {
+        queryClient.invalidateQueries({ queryKey: ['workspace', activeWorkspaceId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['workspace'] });
+    });
+
     // Cleanup listeners on unmount or dependency change
     return () => {
       socket.off('connect');
@@ -78,6 +98,7 @@ export const useSocketSync = () => {
       socket.off('notification:new');
       socket.off('activity:new');
       socket.off('task:changed');
+      socket.off('project:changed');
     };
   }, [user, activeWorkspaceId, queryClient]);
 };

@@ -117,4 +117,21 @@ export class SocketService {
       console.warn(`[DEBUG SERVER WARNING] Cannot broadcast task:changed because ioInstance is null!`);
     }
   }
+
+  /**
+   * Broadcasts real-time project changes to all members of that workspace.
+   */
+  public static broadcastProjectUpdate(workspaceId: string, projectId: string, action: 'create' | 'update' | 'delete', projectData?: any): void {
+    if (ioInstance) {
+      console.log(`[DEBUG SERVER] Emitting project:changed event for projectId: ${projectId}, action: ${action} to workspace: ${workspaceId}`);
+      ioInstance.to(`workspace:${workspaceId}`).emit('project:changed', {
+        projectId,
+        action,
+        projectData
+      });
+      console.log(`[Socket Broadcast] Sent project:changed [${action}] to workspace:${workspaceId}`);
+    } else {
+      console.warn(`[DEBUG SERVER WARNING] Cannot broadcast project:changed because ioInstance is null!`);
+    }
+  }
 }
