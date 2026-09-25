@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Calendar, UsersIcon, FolderOpen } from "lucide-react";
 import { format } from "date-fns";
 import { useActiveWorkspace } from "../hooks/useActiveWorkspace";
-import { Loader2Icon } from "lucide-react";
+import { useProjectsQuery } from "../hooks/useProjects";
+import { useSelector } from "react-redux";
+import CreateProjectDialog from "./CreateProjectDialog";
 
 const ProjectOverview = () => {
     const statusColors = {
@@ -20,9 +22,12 @@ const ProjectOverview = () => {
         HIGH: "border-green-300 text-green-700 dark:border-green-500 dark:text-green-400",
     };
 
-    const { currentWorkspace, isAdminOrOwner, isLoading } = useActiveWorkspace();
+    const activeWorkspaceId = useSelector((state) => state.ui.activeWorkspaceId);
+    const { currentWorkspace, isAdminOrOwner, isLoading: isWorkspaceLoading } = useActiveWorkspace();
+    const { data: projectsData, isLoading: isProjectsLoading } = useProjectsQuery(activeWorkspaceId);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const projects = currentWorkspace?.projects || [];
+    const projects = projectsData || currentWorkspace?.projects || [];
+    const isLoading = isWorkspaceLoading || isProjectsLoading;
 
     if (isLoading) {
         return (

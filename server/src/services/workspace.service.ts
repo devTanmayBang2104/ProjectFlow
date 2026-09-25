@@ -80,7 +80,7 @@ export class WorkspaceService {
   /**
    * Retrieves workspace details, including members and projects.
    */
-  public async getWorkspaceById(workspaceId: string): Promise<any> {
+  public async getWorkspaceById(workspaceId: string, userId?: string): Promise<any> {
     const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId },
       include: {
@@ -99,7 +99,8 @@ export class WorkspaceService {
         projects: {
           orderBy: { createdAt: 'desc' },
           include: {
-            tasks: true
+            tasks: true,
+            members: true,
           }
         }
       }
@@ -107,6 +108,20 @@ export class WorkspaceService {
 
     if (!workspace) {
       throw new NotFoundError('Workspace not found.');
+    }
+
+    if (userId) {
+      const member = workspace.members.find((m: any) => m.userId === userId);
+      const isOwner = workspace.ownerId === userId;
+      const isAdmin = member?.role === 'ADMIN' || isOwner;
+
+      if (!isAdmin) {
+        workspace.projects = workspace.projects.filter(
+          (project: any) =>
+            project.team_lead === userId ||
+            project.members?.some((m: any) => m.userId === userId)
+        );
+      }
     }
 
     return workspace;

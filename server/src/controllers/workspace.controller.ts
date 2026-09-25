@@ -47,8 +47,9 @@ export class WorkspaceController {
 
   public getWorkspaceById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (!req.user) throw new UnauthorizedError();
       const workspaceId = req.params.id;
-      const workspace = await workspaceService.getWorkspaceById(workspaceId);
+      const workspace = await workspaceService.getWorkspaceById(workspaceId, req.user.id);
 
       res.status(200).json({
         success: true,
