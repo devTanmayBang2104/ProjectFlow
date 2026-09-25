@@ -99,8 +99,11 @@ export class TaskService {
       );
     }
 
-    // Broadcast creation to workspace room
-    SocketService.broadcastTaskUpdate(project.workspaceId, task.id, 'create', task);
+    // Broadcast task creation to workspace room
+    SocketService.broadcastTaskUpdate(project.workspaceId, task.id, 'create', {
+      ...task,
+      projectId: project.id,
+    });
 
     return task;
   }
@@ -311,7 +314,10 @@ export class TaskService {
     );
 
     // Broadcast delete to workspace room
-    SocketService.broadcastTaskUpdate(task.project.workspaceId, taskId, 'delete', { id: taskId });
+    SocketService.broadcastTaskUpdate(task.project.workspaceId, taskId, 'delete', { 
+      id: taskId,
+      projectId: task.projectId 
+    });
   }
 
   // --- SUBTASKS ---
