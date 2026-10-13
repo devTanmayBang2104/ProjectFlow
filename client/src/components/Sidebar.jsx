@@ -45,7 +45,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
                             className='flex w-full items-center gap-3 py-2 px-4 text-zinc-800 dark:text-zinc-100 cursor-pointer rounded hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-all'
                         >
                             <SettingsIcon size={16} />
-                            <p className='text-sm truncate'>Settings</p>
+                            <p className='text-sm truncate'>Account Settings</p>
                         </button>
                     </div>
                     <MyTasksSidebar />
