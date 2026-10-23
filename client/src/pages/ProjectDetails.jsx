@@ -8,6 +8,8 @@ import CreateTaskDialog from "../components/CreateTaskDialog";
 import ProjectCalendar from "../components/ProjectCalendar";
 import ProjectTasks from "../components/ProjectTasks";
 import ProjectSprints from "../components/ProjectSprints";
+import ProjectKanbanBoard from "../components/ProjectKanbanBoard";
+import { Kanban } from "lucide-react";
 
 import { useProjectDetailsQuery } from "../hooks/useProjects";
 import { Loader2Icon } from "lucide-react";
@@ -107,6 +109,7 @@ export default function ProjectDetail() {
                 <div className="inline-flex flex-wrap max-sm:grid grid-cols-3 gap-1.5 border border-zinc-200 dark:border-zinc-800 p-1.5 rounded-xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm shadow-sm">
                     {[
                         { key: "tasks", label: "Tasks", icon: FileStackIcon },
+                        { key: "board", label: "Board", icon: Kanban },
                         { key: "sprints", label: "Sprints", icon: ZapIcon },
                         { key: "calendar", label: "Calendar", icon: CalendarIcon },
                         { key: "analytics", label: "Analytics", icon: BarChart3Icon },
@@ -123,6 +126,11 @@ export default function ProjectDetail() {
                     {activeTab === "tasks" && (
                         <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
                             <ProjectTasks tasks={tasks} />
+                        </div>
+                    )}
+                    {activeTab === "board" && (
+                        <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
+                            <ProjectKanbanBoard tasks={tasks} projectId={id} onNewTask={() => setShowCreateTask(true)} />
                         </div>
                     )}
                     {activeTab === "sprints" && (

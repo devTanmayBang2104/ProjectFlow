@@ -49,7 +49,35 @@ export const useUpdateTaskMutation = (projectId) => {
       const response = await apiClient.put(`/tasks/${taskId}`, updateData);
       return response.data.data;
     },
-    onSuccess: (data, variables) => {
+    // Instant Optimistic Update
+    onMutate: async ({ taskId, ...updateData }) => {
+      if (!projectId) return;
+
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['project', projectId] });
+
+      // Snapshot previous project state
+      const previousProject = queryClient.getQueryData(['project', projectId]);
+
+      // Optimistically update project tasks in cache
+      if (previousProject && previousProject.tasks) {
+        queryClient.setQueryData(['project', projectId], {
+          ...previousProject,
+          tasks: previousProject.tasks.map((task) =>
+            task.id === taskId ? { ...task, ...updateData } : task
+          ),
+        });
+      }
+
+      return { previousProject };
+    },
+    onError: (err, variables, context) => {
+      // Rollback to previous state on failure
+      if (context?.previousProject) {
+        queryClient.setQueryData(['project', projectId], context.previousProject);
+      }
+    },
+    onSettled: (data, error, variables) => {
       queryClient.invalidateQueries({ queryKey: ['task', variables.taskId] });
       queryClient.invalidateQueries({ queryKey: ['workspace'] });
       if (projectId) {

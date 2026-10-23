@@ -53,11 +53,43 @@ export const useSocketSync = () => {
     socket.on('task:changed', ({ taskId, action, taskData }) => {
       console.log('[DEBUG CLIENT SOCKET] task:changed received for taskId:', taskId, 'action:', action, 'taskData:', taskData);
       
+      const projectId = taskData?.projectId || taskData?.project?.id;
+
+      // Real-time direct in-memory cache update for other teammates (instant ~100ms sync without HTTP refetch)
+      if (projectId && taskData) {
+        queryClient.setQueryData(['project', projectId], (oldData) => {
+          if (!oldData || !oldData.tasks) return oldData;
+          
+          if (action === 'update') {
+            return {
+              ...oldData,
+              tasks: oldData.tasks.map((t) => (t.id === taskId ? { ...t, ...taskData } : t)),
+            };
+          }
+
+          if (action === 'create') {
+            if (oldData.tasks.some((t) => t.id === taskId)) return oldData;
+            return {
+              ...oldData,
+              tasks: [taskData, ...oldData.tasks],
+            };
+          }
+
+          if (action === 'delete') {
+            return {
+              ...oldData,
+              tasks: oldData.tasks.filter((t) => t.id !== taskId),
+            };
+          }
+
+          return oldData;
+        });
+      }
+
       // Invalidate the specific task query
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       
-      // Invalidate project queries so all teammates on the board see task additions, moves, and deletions immediately
-      const projectId = taskData?.projectId || taskData?.project?.id;
+      // Invalidate project queries in background to guarantee eventual consistency
       if (projectId) {
         queryClient.invalidateQueries({ queryKey: ['project', projectId] });
       }
