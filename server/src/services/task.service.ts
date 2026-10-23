@@ -434,8 +434,8 @@ export class TaskService {
       }
     });
 
-    // Notify task assignee (if it's not the comment creator)
-    if (task.assigneeId !== userId) {
+    // Notify assignee (if not the creator)
+    if (task.assigneeId && task.assigneeId !== userId) {
       await notification.create(
         task.assigneeId,
         'New Comment on Assigned Task',

@@ -85,7 +85,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (req: express.Request, res: express.Response) => {
   res.status(200).json({ status: 'healthy', timestamp: new Date() });
 });
 
