@@ -410,10 +410,13 @@ export class AuthService {
   /**
    * Handle Google OAuth login and registration pipeline
    */
-  public async googleLogin(code: string, userAgent?: string, ipAddress?: string): Promise<any> {
+  public async googleLogin(code: string, userAgent?: string, ipAddress?: string, clientOrigin?: string): Promise<any> {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_CALLBACK_URL;
+    let redirectUri = process.env.GOOGLE_CALLBACK_URL;
+    if (clientOrigin && (clientOrigin.includes('vercel.app') || clientOrigin.includes('localhost'))) {
+      redirectUri = `${clientOrigin}/google-callback`;
+    }
 
     if (!clientId || !clientSecret || !redirectUri) {
       throw new Error('Google OAuth credentials are not configured on the server.');

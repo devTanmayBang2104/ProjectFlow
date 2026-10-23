@@ -210,7 +210,12 @@ export class AuthController {
   public getGoogleAuthUrl = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const clientId = process.env.GOOGLE_CLIENT_ID;
-      const redirectUri = process.env.GOOGLE_CALLBACK_URL;
+      let redirectUri = process.env.GOOGLE_CALLBACK_URL;
+
+      const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : undefined);
+      if (origin && (origin.includes('vercel.app') || origin.includes('localhost'))) {
+        redirectUri = `${origin}/google-callback`;
+      }
       
       if (!clientId || !redirectUri) {
         res.status(500).json({ 
@@ -227,7 +232,7 @@ export class AuthController {
       res.cookie('oauth-state', state, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 10 * 60 * 1000, // 10 minutes
         path: '/',
       });
@@ -266,18 +271,28 @@ export class AuthController {
 
       // Verify anti-CSRF state token
       const cookieState = req.cookies?.['oauth-state'];
+      const isProd = process.env.NODE_ENV === 'production';
+      const cookieOptions = {
+        path: '/',
+        secure: isProd,
+        sameSite: isProd ? ('none' as const) : ('lax' as const),
+      };
+
       if (!state || !cookieState || state !== cookieState) {
-        res.clearCookie('oauth-state', { path: '/' });
+        res.clearCookie('oauth-state', cookieOptions);
         throw new ForbiddenError('OAuth state verification failed. Possible CSRF attack detected.');
       }
 
       // Clear the oauth-state cookie
-      res.clearCookie('oauth-state', { path: '/' });
+      res.clearCookie('oauth-state', cookieOptions);
+
+      const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : undefined);
 
       const { user, accessToken, refreshToken } = await authService.googleLogin(
         code,
         userAgent,
-        ipAddress
+        ipAddress,
+        origin
       );
 
       // Set cookies for JWT
