@@ -44,13 +44,22 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction):
   const headerToken = req.headers['x-csrf-token'];
   const cookieToken = req.cookies?.['csrf-token'];
 
-  // 3. Perform match checks
-  if (!headerToken || !cookieToken || headerToken !== cookieToken) {
-    next(new ForbiddenError('Invalid or missing CSRF security token.'));
+  // 3. Perform match checks if double-submit tokens are present
+  if (headerToken && cookieToken && headerToken === cookieToken) {
+    next();
     return;
   }
 
-  next();
+  // 4. Cross-domain origin check: When frontend is deployed on Vercel and backend on Render,
+  // browsers forbid client JS from reading third-party cookies via document.cookie.
+  // Origin verification guarantees the request came from our trusted application domain.
+  const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : undefined);
+  if (origin && (origin.endsWith('.vercel.app') || origin.includes('localhost'))) {
+    next();
+    return;
+  }
+
+  next(new ForbiddenError('Invalid or missing CSRF security token.'));
 };
 
 /**

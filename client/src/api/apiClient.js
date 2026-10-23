@@ -23,7 +23,7 @@ const apiClient = axios.create({
 // 1. Request Interceptor: Attach CSRF token on every request
 apiClient.interceptors.request.use(
   (config) => {
-    const csrfToken = getCookie('csrf-token');
+    const csrfToken = localStorage.getItem('csrf_token') || getCookie('csrf-token');
     if (csrfToken) {
       config.headers['X-CSRF-Token'] = csrfToken;
     }
@@ -51,6 +51,9 @@ const processQueue = (error, token = null) => {
 
 apiClient.interceptors.response.use(
   (response) => {
+    if (response.data?.data?.csrfToken) {
+      localStorage.setItem('csrf_token', response.data.data.csrfToken);
+    }
     return response;
   },
   async (error) => {
