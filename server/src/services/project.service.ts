@@ -4,6 +4,7 @@ import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors'
 import { ActivityLogService } from './activity.service';
 import { NotificationService } from './notification.service';
 import { SocketService } from './socket.service';
+import cacheService from './cache.service';
 
 const activityLog = new ActivityLogService();
 const notification = new NotificationService();
@@ -13,6 +14,12 @@ export class ProjectService {
    * List all projects inside a specific workspace.
    */
   public async getWorkspaceProjects(workspaceId: string, userId: string): Promise<any[]> {
+    const cacheKey = `projects:workspace:${workspaceId}:user:${userId}`;
+    const cached = await cacheService.get<any[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const membership = await prisma.workspaceMember.findUnique({
       where: {
         userId_workspaceId: {
@@ -28,8 +35,10 @@ export class ProjectService {
 
     const isAdmin = membership.role === 'ADMIN';
 
+    let projects: any[];
+
     if (isAdmin) {
-      return prisma.project.findMany({
+      projects = await prisma.project.findMany({
         where: { workspaceId },
         include: {
           owner: {
@@ -54,7 +63,7 @@ export class ProjectService {
         orderBy: { createdAt: 'desc' }
       });
     } else {
-      return prisma.project.findMany({
+      projects = await prisma.project.findMany({
         where: {
           workspaceId,
           OR: [
@@ -91,6 +100,9 @@ export class ProjectService {
         orderBy: { createdAt: 'desc' }
       });
     }
+
+    await cacheService.set(cacheKey, projects, 300);
+    return projects;
   }
 
   /**
@@ -158,6 +170,9 @@ export class ProjectService {
     // Broadcast real-time project creation to workspace room
     SocketService.broadcastProjectUpdate(workspaceId, project.id, 'create', project);
 
+    // Invalidate workspace projects cache
+    await cacheService.invalidatePattern(`projects:workspace:${workspaceId}:*`);
+
     return project;
   }
 
@@ -165,6 +180,12 @@ export class ProjectService {
    * Retrieves detailed project information including members, tasks, and sprints.
    */
   public async getProjectById(projectId: string, userId: string): Promise<any> {
+    const cacheKey = `project:${projectId}:user:${userId}`;
+    const cached = await cacheService.get<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -235,6 +256,7 @@ export class ProjectService {
       }
     }
 
+    await cacheService.set(cacheKey, project, 300);
     return project;
   }
 
@@ -320,6 +342,10 @@ export class ProjectService {
     // Broadcast real-time project update to workspace room
     SocketService.broadcastProjectUpdate(project.workspaceId, projectId, 'update', updated);
 
+    // Invalidate caches
+    await cacheService.invalidatePattern(`projects:workspace:${project.workspaceId}:*`);
+    await cacheService.invalidatePattern(`project:${projectId}:*`);
+
     return updated;
   }
 
@@ -348,6 +374,10 @@ export class ProjectService {
       id: projectId,
       workspaceId: project.workspaceId,
     });
+
+    // Invalidate caches
+    await cacheService.invalidatePattern(`projects:workspace:${project.workspaceId}:*`);
+    await cacheService.invalidatePattern(`project:${projectId}:*`);
   }
 
   /**
@@ -425,6 +455,10 @@ export class ProjectService {
       memberAdded: userId,
     });
 
+    // Invalidate caches
+    await cacheService.invalidatePattern(`projects:workspace:${project.workspaceId}:*`);
+    await cacheService.invalidatePattern(`project:${projectId}:*`);
+
     return member;
   }
 
@@ -465,5 +499,9 @@ export class ProjectService {
       id: projectId,
       memberRemoved: userId,
     });
+
+    // Invalidate caches
+    await cacheService.invalidatePattern(`projects:workspace:${project.workspaceId}:*`);
+    await cacheService.invalidatePattern(`project:${projectId}:*`);
   }
 }

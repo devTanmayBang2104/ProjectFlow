@@ -2,6 +2,7 @@ import prisma from '../config/db';
 import { SprintStatus, ActivityAction } from '@prisma/client';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { ActivityLogService } from './activity.service';
+import cacheService from './cache.service';
 
 const activityLog = new ActivityLogService();
 
@@ -63,6 +64,8 @@ export class SprintService {
       `created sprint "${sprint.name}"`,
       projectId
     );
+
+    await cacheService.invalidatePattern(`project:${projectId}:*`);
 
     return sprint;
   }
@@ -126,6 +129,8 @@ export class SprintService {
       sprint.projectId
     );
 
+    await cacheService.invalidatePattern(`project:${sprint.projectId}:*`);
+
     return updated;
   }
 
@@ -153,5 +158,7 @@ export class SprintService {
       `deleted sprint "${sprint.name}"`,
       sprint.projectId
     );
+
+    await cacheService.invalidatePattern(`project:${sprint.projectId}:*`);
   }
 }

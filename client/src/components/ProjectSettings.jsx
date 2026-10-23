@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { Plus, Save, Trash2, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import AddProjectMember from "./AddProjectMember";
-import { useUpdateProjectMutation, useRemoveProjectMemberMutation } from "../hooks/useProjects";
+import { useUpdateProjectMutation, useRemoveProjectMemberMutation, useDeleteProjectMutation } from "../hooks/useProjects";
+import { useActiveWorkspace } from "../hooks/useActiveWorkspace";
+import { useProfile } from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function ProjectSettings({ project }) {
+    const navigate = useNavigate();
+    const { isAdminOrOwner } = useActiveWorkspace();
+    const { data: currentUser } = useProfile();
     const updateProjectMutation = useUpdateProjectMutation(project?.id);
     const removeProjectMemberMutation = useRemoveProjectMemberMutation(project?.id);
+    const deleteProjectMutation = useDeleteProjectMutation(project?.workspaceId);
+
+    const isTeamLead = project?.team_lead === currentUser?.id;
+    const canManageProject = isAdminOrOwner || isTeamLead;
 
     const [formData, setFormData] = useState({
         name: "",
@@ -21,6 +31,29 @@ export default function ProjectSettings({ project }) {
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDeleteProject = async () => {
+        const confirmDelete = window.confirm(
+            `Are you sure you want to permanently delete "${project?.name}"? All associated tasks, sprints, comments, and attachments will be permanently removed.`
+        );
+        if (!confirmDelete) return;
+
+        try {
+            setIsDeleting(true);
+            toast.loading("Deleting project...");
+            await deleteProjectMutation.mutateAsync(project?.id);
+            toast.dismissAll();
+            toast.success("Project deleted successfully!");
+            navigate("/projects");
+        } catch (err) {
+            toast.dismissAll();
+            const errMsg = err.response?.data?.error?.message || err.message || "Failed to delete project.";
+            toast.error(errMsg);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -256,6 +289,28 @@ export default function ProjectSettings({ project }) {
                         </div>
                     )}
                 </div>
+
+                {/* Danger Zone: Delete Project (Admins Only) */}
+                {isAdminOrOwner && (
+                    <div className="rounded-lg border p-6 border-red-200 dark:border-red-950/60 bg-red-50/40 dark:bg-red-950/10">
+                        <div className="flex items-center gap-2 mb-2">
+                            <AlertTriangle className="size-5 text-red-600 dark:text-red-400" />
+                            <h2 className="text-base font-bold text-red-600 dark:text-red-400">Danger Zone</h2>
+                        </div>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-4">
+                            Permanently delete this project along with all associated tasks, sprints, comments, and attachments. This action cannot be undone.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={handleDeleteProject}
+                            disabled={isDeleting || deleteProjectMutation.isPending}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                        >
+                            <Trash2 className="size-4" />
+                            {isDeleting || deleteProjectMutation.isPending ? "Deleting Project..." : "Delete Project"}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

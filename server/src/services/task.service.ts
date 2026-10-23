@@ -4,6 +4,7 @@ import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors'
 import { ActivityLogService } from './activity.service';
 import { NotificationService } from './notification.service';
 import { SocketService } from './socket.service';
+import cacheService from './cache.service';
 
 const activityLog = new ActivityLogService();
 const notification = new NotificationService();
@@ -104,6 +105,9 @@ export class TaskService {
       ...task,
       projectId: project.id,
     });
+
+    // Invalidate project details cache
+    await cacheService.invalidatePattern(`project:${projectId}:*`);
 
     return task;
   }
@@ -285,6 +289,9 @@ export class TaskService {
     // Broadcast update to workspace room
     SocketService.broadcastTaskUpdate(task.project.workspaceId, taskId, 'update', updatedTask);
 
+    // Invalidate project details cache
+    await cacheService.invalidatePattern(`project:${task.projectId}:*`);
+
     return updatedTask;
   }
 
@@ -318,6 +325,9 @@ export class TaskService {
       id: taskId,
       projectId: task.projectId 
     });
+
+    // Invalidate project details cache
+    await cacheService.invalidatePattern(`project:${task.projectId}:*`);
   }
 
   // --- SUBTASKS ---

@@ -28,6 +28,9 @@ import notificationRoutes from './routes/notification.routes';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Enable trust proxy for reverse proxy platforms like Render/Heroku
+app.set('trust proxy', 1);
+
 // 1. General Security & HTTP Headers
 app.use(
   helmet({
