@@ -2,6 +2,33 @@ import dotenv from 'dotenv';
 // Load environment variables before any other imports
 dotenv.config();
 
+import dns from 'dns';
+// Resilient DNS fallback (resolves via Google/Cloudflare DNS if local ISP DNS blocks/refuses cloud DBs)
+const publicResolver = new dns.Resolver();
+publicResolver.setServers(['8.8.8.8', '1.1.1.1']);
+const originalLookup = dns.lookup;
+(dns as any).lookup = function (hostname: string, options: any, callback: any) {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  originalLookup(hostname, options, (err: any, address: any, family: any) => {
+    if (err && hostname && (hostname.includes('neon.tech') || hostname.includes('aws'))) {
+      publicResolver.resolve4(hostname, (resErr, addresses) => {
+        if (!resErr && addresses && addresses.length > 0) {
+          if (options && options.all) {
+            return callback(null, addresses.map((a) => ({ address: a, family: 4 })));
+          }
+          return callback(null, addresses[0], 4);
+        }
+        callback(err, address, family);
+      });
+    } else {
+      callback(err, address, family);
+    }
+  });
+};
+
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
