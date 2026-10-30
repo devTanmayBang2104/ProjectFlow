@@ -1,6 +1,6 @@
 import prisma from '../config/db';
 import { TaskStatus, TaskType, Priority, ActivityAction, NotificationType } from '@prisma/client';
-import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
+import { BadRequestError, NotFoundError, ForbiddenError, ConflictError } from '../utils/errors';
 import { ActivityLogService } from './activity.service';
 import { NotificationService } from './notification.service';
 import { SocketService } from './socket.service';
@@ -203,6 +203,7 @@ export class TaskService {
       due_date?: string;
       sprintId?: string;
       labelIds?: string[];
+      version?: number;
     }
   ): Promise<any> {
     const task = await prisma.task.findUnique({
@@ -214,6 +215,16 @@ export class TaskService {
       throw new NotFoundError('Task not found.');
     }
 
+    // System Design - Optimistic Concurrency Control (OCC)
+    // Prevent lost updates by ensuring the client is operating on the latest version
+    if (data.version !== undefined && (task as any).version !== undefined) {
+      if ((task as any).version !== data.version) {
+        throw new ConflictError(
+          'Conflict detected: This task has already been updated by another user. Please refresh and review the latest changes.'
+        );
+      }
+    }
+
     const updateData: any = {
       title: data.title,
       description: data.description,
@@ -221,6 +232,7 @@ export class TaskService {
       type: data.type,
       priority: data.priority,
       assigneeId: data.assigneeId === "" ? null : data.assigneeId,
+      version: { increment: 1 },
     };
 
     if (data.due_date !== undefined) {

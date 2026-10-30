@@ -1,4 +1,6 @@
 import { Server, Socket } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import Redis from 'ioredis';
 import { verifyAccessToken } from '../utils/auth';
 import prisma from '../config/db';
 
@@ -23,6 +25,31 @@ export class SocketService {
    */
   public static init(io: Server): void {
     ioInstance = io;
+
+    // Horizontal Scaling: Attach Redis Pub/Sub adapter if REDIS_URL is configured
+    if (process.env.REDIS_URL) {
+      try {
+        const pubClient = new Redis(process.env.REDIS_URL, {
+          lazyConnect: true,
+          maxRetriesPerRequest: 1,
+        });
+        const subClient = pubClient.duplicate();
+
+        pubClient.on('error', () => {});
+        subClient.on('error', () => {});
+
+        Promise.all([pubClient.connect(), subClient.connect()])
+          .then(() => {
+            io.adapter(createAdapter(pubClient, subClient));
+            console.log('[Socket] Horizontal scaling active: Connected to Redis Pub/Sub adapter.');
+          })
+          .catch((err) => {
+            console.warn('[Socket] Redis adapter unreachable, operating on single-node in-memory adapter:', err?.message || err);
+          });
+      } catch (err: any) {
+        console.warn('[Socket] Failed to initialize Redis adapter:', err?.message || err);
+      }
+    }
 
     // 1. Connection Authentication Middleware
     io.use(async (socket: Socket, next) => {

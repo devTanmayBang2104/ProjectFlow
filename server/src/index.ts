@@ -15,6 +15,7 @@ import { initCronJobs } from './services/cron.service';
 import { apiLimiter } from './middlewares/rateLimit.middleware';
 import { csrfProtection } from './middlewares/csrf.middleware';
 import { errorHandler } from './middlewares/error.middleware';
+import { devFallbackMiddleware } from './middlewares/devFallback';
 
 // Import Route Handlers
 import authRoutes from './routes/auth.routes';
@@ -81,6 +82,11 @@ app.use('/api', apiLimiter);
 
 // 5. CSRF Protection (Double-Submit Cookie validation)
 app.use('/api', csrfProtection);
+
+// Development offline fallback middleware (only active when explicitly enabled)
+if (process.env.OFFLINE_MODE === 'true') {
+  app.use('/api', devFallbackMiddleware);
+}
 
 // 6. Mount API Route Endpoints
 app.use('/api/auth', authRoutes);

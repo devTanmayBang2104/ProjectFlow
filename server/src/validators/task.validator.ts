@@ -39,6 +39,7 @@ export const updateTaskSchema = z.object({
     due_date: z.string().datetime('Invalid due date format').optional(),
     sprintId: z.string().uuid('Sprint ID must be a valid UUID').or(z.literal(null)).optional(),
     labelIds: z.array(z.string().uuid('Label ID must be a valid UUID')).optional(),
+    version: z.number().int().positive().optional(),
   }),
 });
 

@@ -6,6 +6,8 @@ class CacheService {
   private client: Redis | null = null;
   private isConnected: boolean = false;
   private memoryFallback: Map<string, { value: string; expiry: number }> = new Map();
+  // System Design: Singleflight deduplication map to prevent Cache Stampede (Thundering Herd)
+  private inFlightRequests: Map<string, Promise<any>> = new Map();
 
   constructor() {
     const redisUrl = process.env.REDIS_URL;
@@ -71,6 +73,39 @@ class CacheService {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * getOrSet implements the Singleflight (Promise deduplication) Cache-Aside pattern.
+   * If hundreds of concurrent requests request the same key on a cache miss, only 1 database query executes,
+   * completely eliminating Cache Stampede / Thundering Herd issues.
+   */
+  public async getOrSet<T>(key: string, fetcher: () => Promise<T>, ttlSeconds: number = 300): Promise<T> {
+    const cached = await this.get<T>(key);
+    if (cached !== null) {
+      return cached;
+    }
+
+    // Check if an identical database query is already in-flight
+    const inFlight = this.inFlightRequests.get(key);
+    if (inFlight) {
+      return inFlight as Promise<T>;
+    }
+
+    const fetchPromise = (async () => {
+      try {
+        const freshData = await fetcher();
+        if (freshData !== null && freshData !== undefined) {
+          await this.set(key, freshData, ttlSeconds);
+        }
+        return freshData;
+      } finally {
+        this.inFlightRequests.delete(key);
+      }
+    })();
+
+    this.inFlightRequests.set(key, fetchPromise);
+    return fetchPromise;
   }
 
   /**

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import apiClient from '../api/apiClient';
 
 /**
@@ -46,6 +47,14 @@ export const useUpdateTaskMutation = (projectId) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ taskId, ...updateData }) => {
+      // System Design: Attach current version to enforce Optimistic Concurrency Control (OCC)
+      if (updateData.version === undefined && projectId) {
+        const cachedProject = queryClient.getQueryData(['project', projectId]);
+        const currentTask = cachedProject?.tasks?.find((t) => t.id === taskId);
+        if (currentTask?.version) {
+          updateData.version = currentTask.version;
+        }
+      }
       const response = await apiClient.put(`/tasks/${taskId}`, updateData);
       return response.data.data;
     },
@@ -75,6 +84,11 @@ export const useUpdateTaskMutation = (projectId) => {
       // Rollback to previous state on failure
       if (context?.previousProject) {
         queryClient.setQueryData(['project', projectId], context.previousProject);
+      }
+      if (err?.response?.status === 409) {
+        toast.error(
+          err.response?.data?.message || 'Conflict: This task was modified by another user. Reverting changes.'
+        );
       }
     },
     onSettled: (data, error, variables) => {

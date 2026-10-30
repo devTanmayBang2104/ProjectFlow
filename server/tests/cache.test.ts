@@ -49,4 +49,30 @@ describe('CacheService Unit Tests', () => {
     const result = await cacheService.get('test:expiring:key');
     expect(result).toBeNull();
   });
+
+  it('should deduplicate concurrent requests using Singleflight (Cache Stampede prevention)', async () => {
+    let databaseQueriesCount = 0;
+    const expensiveDbQuery = async () => {
+      databaseQueriesCount++;
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      return { data: 'heavy-query-result' };
+    };
+
+    // Simulate 5 simultaneous requests arriving at the exact same millisecond
+    const results = await Promise.all([
+      cacheService.getOrSet('test:stampede:key', expensiveDbQuery, 60),
+      cacheService.getOrSet('test:stampede:key', expensiveDbQuery, 60),
+      cacheService.getOrSet('test:stampede:key', expensiveDbQuery, 60),
+      cacheService.getOrSet('test:stampede:key', expensiveDbQuery, 60),
+      cacheService.getOrSet('test:stampede:key', expensiveDbQuery, 60),
+    ]);
+
+    // All 5 callers should receive identical data
+    results.forEach((res) => {
+      expect(res).toEqual({ data: 'heavy-query-result' });
+    });
+
+    // But the database query MUST only execute ONCE!
+    expect(databaseQueriesCount).toBe(1);
+  });
 });

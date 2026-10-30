@@ -15,94 +15,86 @@ export class ProjectService {
    */
   public async getWorkspaceProjects(workspaceId: string, userId: string): Promise<any[]> {
     const cacheKey = `projects:workspace:${workspaceId}:user:${userId}`;
-    const cached = await cacheService.get<any[]>(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    const membership = await prisma.workspaceMember.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId,
-        }
-      }
-    });
-
-    if (!membership) {
-      throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
-    }
-
-    const isAdmin = membership.role === 'ADMIN';
-
-    let projects: any[];
-
-    if (isAdmin) {
-      projects = await prisma.project.findMany({
-        where: { workspaceId },
-        include: {
-          owner: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            }
-          },
-          members: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  image: true,
-                }
-              }
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      });
-    } else {
-      projects = await prisma.project.findMany({
+    return cacheService.getOrSet(cacheKey, async () => {
+      const membership = await prisma.workspaceMember.findUnique({
         where: {
-          workspaceId,
-          OR: [
-            { team_lead: userId },
-            {
-              members: {
-                some: {
-                  userId,
+          userId_workspaceId: {
+            userId,
+            workspaceId,
+          }
+        }
+      });
+
+      if (!membership) {
+        throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
+      }
+
+      const isAdmin = membership.role === 'ADMIN';
+
+      if (isAdmin) {
+        return prisma.project.findMany({
+          where: { workspaceId },
+          include: {
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              }
+            },
+            members: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                  }
                 }
               }
-            }
-          ]
-        },
-        include: {
-          owner: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
             }
           },
-          members: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  image: true,
+          orderBy: { createdAt: 'desc' }
+        });
+      } else {
+        return prisma.project.findMany({
+          where: {
+            workspaceId,
+            OR: [
+              { team_lead: userId },
+              {
+                members: {
+                  some: {
+                    userId,
+                  }
+                }
+              }
+            ]
+          },
+          include: {
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              }
+            },
+            members: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                  }
                 }
               }
             }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      });
-    }
-
-    await cacheService.set(cacheKey, projects, 300);
-    return projects;
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+      }
+    }, 300);
   }
 
   /**
@@ -181,83 +173,79 @@ export class ProjectService {
    */
   public async getProjectById(projectId: string, userId: string): Promise<any> {
     const cacheKey = `project:${projectId}:user:${userId}`;
-    const cached = await cacheService.get<any>(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          }
-        },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
+    return cacheService.getOrSet(cacheKey, async () => {
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            }
+          },
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                }
               }
             }
-          }
-        },
-        sprints: {
-          orderBy: { startDate: 'asc' }
-        },
-        tasks: {
-          include: {
-            assignee: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-              }
-            },
-            labels: true,
           },
-          orderBy: { createdAt: 'desc' }
+          sprints: {
+            orderBy: { startDate: 'asc' }
+          },
+          tasks: {
+            include: {
+              assignee: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                }
+              },
+              labels: true,
+            },
+            orderBy: { createdAt: 'desc' }
+          }
+        }
+      });
+
+      if (!project) {
+        throw new NotFoundError('Project not found.');
+      }
+
+      // Check workspace membership
+      const membership = await prisma.workspaceMember.findUnique({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: project.workspaceId,
+          }
+        }
+      });
+
+      if (!membership) {
+        throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
+      }
+
+      // If role is MEMBER, check if user is team lead or project member
+      if (membership.role !== 'ADMIN') {
+        const isTeamLead = project.team_lead === userId;
+        const isProjectMember = project.members.some((m) => m.userId === userId);
+
+        if (!isTeamLead && !isProjectMember) {
+          throw new ForbiddenError('Access Denied. You are not a member of this project.');
         }
       }
-    });
 
-    if (!project) {
-      throw new NotFoundError('Project not found.');
-    }
-
-    // Check workspace membership
-    const membership = await prisma.workspaceMember.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId: project.workspaceId,
-        }
-      }
-    });
-
-    if (!membership) {
-      throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
-    }
-
-    // If role is MEMBER, check if user is team lead or project member
-    if (membership.role !== 'ADMIN') {
-      const isTeamLead = project.team_lead === userId;
-      const isProjectMember = project.members.some((m) => m.userId === userId);
-
-      if (!isTeamLead && !isProjectMember) {
-        throw new ForbiddenError('Access Denied. You are not a member of this project.');
-      }
-    }
-
-    await cacheService.set(cacheKey, project, 300);
-    return project;
+      return project;
+    }, 300);
   }
 
   /**
