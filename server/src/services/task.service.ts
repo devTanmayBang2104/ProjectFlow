@@ -106,8 +106,12 @@ export class TaskService {
       projectId: project.id,
     });
 
-    // Invalidate project details cache
+    // Invalidate project and workspace caches
     await cacheService.invalidatePattern(`project:${projectId}:*`);
+    await cacheService.invalidatePattern(`projects:workspace:${project.workspaceId}:*`);
+
+    // Automatically recalculate and persist project progress
+    await this.recalculateProjectProgress(projectId);
 
     return task;
   }
@@ -301,8 +305,12 @@ export class TaskService {
     // Broadcast update to workspace room
     SocketService.broadcastTaskUpdate(task.project.workspaceId, taskId, 'update', updatedTask);
 
-    // Invalidate project details cache
+    // Automatically recalculate and persist project progress
+    await this.recalculateProjectProgress(task.projectId);
+
+    // Invalidate project and workspace caches
     await cacheService.invalidatePattern(`project:${task.projectId}:*`);
+    await cacheService.invalidatePattern(`projects:workspace:${task.project.workspaceId}:*`);
 
     return updatedTask;
   }
@@ -338,8 +346,35 @@ export class TaskService {
       projectId: task.projectId 
     });
 
-    // Invalidate project details cache
+    // Automatically recalculate and persist project progress
+    await this.recalculateProjectProgress(task.projectId);
+
+    // Invalidate project and workspace caches
     await cacheService.invalidatePattern(`project:${task.projectId}:*`);
+    await cacheService.invalidatePattern(`projects:workspace:${task.project.workspaceId}:*`);
+  }
+
+  /**
+   * Automatically calculates and persists project progress based on task completion.
+   * Formula: Progress = (Completed Tasks / Total Tasks) * 100
+   */
+  public async recalculateProjectProgress(projectId: string): Promise<number> {
+    try {
+      const [totalTasks, completedTasks] = await Promise.all([
+        prisma.task.count({ where: { projectId } }),
+        prisma.task.count({ where: { projectId, status: TaskStatus.DONE } }),
+      ]);
+
+      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      await prisma.project.update({
+        where: { id: projectId },
+        data: { progress },
+      });
+      return progress;
+    } catch (err) {
+      console.warn(`[TaskService] Failed to auto-recalculate project progress for ${projectId}:`, err);
+      return 0;
+    }
   }
 
   // --- SUBTASKS ---

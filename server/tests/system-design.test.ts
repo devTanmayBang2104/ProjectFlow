@@ -10,6 +10,10 @@ vi.mock('../src/config/db', () => ({
     task: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      count: vi.fn().mockResolvedValue(4),
+    },
+    project: {
+      update: vi.fn().mockResolvedValue({ id: 'proj-1', progress: 50 }),
     },
     projectMember: {
       findUnique: vi.fn(),
@@ -138,6 +142,37 @@ describe('System Design Capabilities Test Suite', () => {
       expect(() => SocketService.init(mockIo)).not.toThrow();
       expect(mockIo.use).toHaveBeenCalled();
       expect(mockIo.on).toHaveBeenCalledWith('connection', expect.any(Function));
+    });
+  });
+
+  describe('Scenario 4: Automated Project Progress Calculation', () => {
+    it('should automatically compute and persist progress based on completed tasks ratio', async () => {
+      // 4 total tasks, 3 completed = 75% progress
+      (prisma.task.count as any)
+        .mockResolvedValueOnce(4)  // totalTasks
+        .mockResolvedValueOnce(3); // completedTasks
+
+      const progress = await taskService.recalculateProjectProgress('proj-1');
+
+      expect(progress).toBe(75);
+      expect(prisma.project.update).toHaveBeenCalledWith({
+        where: { id: 'proj-1' },
+        data: { progress: 75 },
+      });
+    });
+
+    it('should return 0% progress when project has 0 tasks', async () => {
+      (prisma.task.count as any)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
+
+      const progress = await taskService.recalculateProjectProgress('proj-empty');
+
+      expect(progress).toBe(0);
+      expect(prisma.project.update).toHaveBeenCalledWith({
+        where: { id: 'proj-empty' },
+        data: { progress: 0 },
+      });
     });
   });
 });

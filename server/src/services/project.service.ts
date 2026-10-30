@@ -244,6 +244,11 @@ export class ProjectService {
         }
       }
 
+      // Automatically sync progress based on actual completed tasks
+      const totalTasks = project.tasks.length;
+      const completedTasks = project.tasks.filter((t: any) => t.status === 'DONE').length;
+      project.progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
       return project;
     }, 300);
   }

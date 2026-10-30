@@ -19,6 +19,13 @@ export default function ProjectSettings({ project }) {
     const isTeamLead = project?.team_lead === currentUser?.id;
     const canManageProject = isAdminOrOwner || isTeamLead;
 
+    // Automatically calculate progress from project tasks
+    const totalTasks = project?.tasks?.length || 0;
+    const completedTasks = project?.tasks?.filter((t) => t.status === "DONE").length || 0;
+    const autoProgress = totalTasks > 0 
+        ? Math.round((completedTasks / totalTasks) * 100) 
+        : (project?.progress || 0);
+
     const [formData, setFormData] = useState({
         name: "",
         description: "",
@@ -73,7 +80,7 @@ export default function ProjectSettings({ project }) {
                 priority: formData.priority,
                 start_date: formData.start_date ? new Date(formData.start_date).toISOString() : undefined,
                 end_date: formData.end_date ? new Date(formData.end_date).toISOString() : undefined,
-                progress: formData.progress,
+                progress: autoProgress,
             });
 
             toast.dismissAll();
@@ -220,18 +227,23 @@ export default function ProjectSettings({ project }) {
                         </div>
                     </div>
 
-                    {/* Progress */}
+                    {/* Progress (Automatically Calculated) */}
                     <div className="space-y-2">
-                        <label className={labelClasses}>Progress: {formData.progress}%</label>
-                        <input 
-                            type="range" 
-                            min="0" 
-                            max="100" 
-                            step="5" 
-                            value={formData.progress} 
-                            onChange={(e) => setFormData({ ...formData, progress: Number(e.target.value) })} 
-                            className="w-full accent-blue-500 dark:accent-blue-400 mt-2 cursor-pointer" 
-                        />
+                        <div className="flex items-center justify-between">
+                            <label className={labelClasses}>Progress: {autoProgress}%</label>
+                            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                                {completedTasks} / {totalTasks} Tasks Done
+                            </span>
+                        </div>
+                        <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden">
+                            <div 
+                                className="bg-gradient-to-r from-blue-600 to-blue-400 h-2.5 rounded-full transition-all duration-500 ease-out" 
+                                style={{ width: `${autoProgress}%` }}
+                            />
+                        </div>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-500">
+                            Automatically updated based on completed tasks in this project.
+                        </p>
                     </div>
 
                     {/* Save Button */}

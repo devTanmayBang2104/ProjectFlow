@@ -144,6 +144,13 @@ export const devFallbackMiddleware = (req: Request, res: Response, next: NextFun
   }
 
   // 3. Project routes
+  projectsList.forEach((proj) => {
+    if (proj.tasks && proj.tasks.length > 0) {
+      const doneCount = proj.tasks.filter((t: any) => t.status === 'DONE' || t.status === 'COMPLETED').length;
+      proj.progress = Math.round((doneCount / proj.tasks.length) * 100);
+    }
+  });
+
   if (url.startsWith('/projects/workspace/') && method === 'GET') {
     return res.status(200).json({
       success: true,
