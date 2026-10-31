@@ -2,6 +2,14 @@ import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 import path from 'path';
 import { BadRequestError } from '../utils/errors';
+import { CircuitBreakerRegistry } from '../utils/circuitBreaker';
+
+const cloudinaryCircuitBreaker = CircuitBreakerRegistry.getOrCreate({
+  name: 'cloudinary',
+  failureThreshold: 5,
+  cooldownPeriodMs: 30000,
+  timeoutMs: 15000,
+});
 
 const isCloudinaryConfigured = (): boolean => {
   return !!(
@@ -37,56 +45,66 @@ export class UploadService {
     folder: string,
     options?: { cropSquare?: boolean }
   ): Promise<{ url: string; publicId: string }> {
-    // 1. Cloudinary upload path
+    // Helper function for local disk storage fallback
+    const saveToLocalStorage = () => {
+      console.log(`[Upload] Using resilient local storage fallback for "${file.originalname}".`);
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const fileExt = path.extname(file.originalname);
+      const filename = `${folder}-${uniqueSuffix}${fileExt}`;
+      const destPath = path.join(uploadsDir, filename);
+
+      fs.writeFileSync(destPath, file.buffer);
+
+      const serverUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+      const localUrl = `${serverUrl}/uploads/${filename}`;
+
+      return {
+        url: localUrl,
+        publicId: `local-${filename}`,
+      };
+    };
+
+    // 1. Cloudinary upload path with Circuit Breaker fault isolation
     if (isCloudinaryConfigured()) {
-      return new Promise((resolve, reject) => {
-        const uploadOptions: any = { folder: `project-management/${folder}` };
-        if (options?.cropSquare) {
-          uploadOptions.transformation = [
-            { width: 256, height: 256, crop: 'fill', gravity: 'center' }
-          ];
-        }
-        
-        const stream = cloudinary.uploader.upload_stream(
-          uploadOptions,
-          (error, result) => {
-            if (error) {
-              console.error('[Cloudinary Error] Failed to upload:', error);
-              reject(new Error('Cloudinary upload failed.'));
-            } else {
-              resolve({
-                url: result!.secure_url,
-                publicId: result!.public_id,
-              });
-            }
+      return cloudinaryCircuitBreaker.execute<{ url: string; publicId: string }>(
+        () => new Promise((resolve, reject) => {
+          const uploadOptions: any = { folder: `project-management/${folder}` };
+          if (options?.cropSquare) {
+            uploadOptions.transformation = [
+              { width: 256, height: 256, crop: 'fill', gravity: 'center' }
+            ];
           }
-        );
-        stream.end(file.buffer);
-      });
+          
+          const stream = cloudinary.uploader.upload_stream(
+            uploadOptions,
+            (error, result) => {
+              if (error) {
+                console.error('[Cloudinary Error] Failed to upload:', error);
+                reject(new Error('Cloudinary upload failed.'));
+              } else {
+                resolve({
+                  url: result!.secure_url,
+                  publicId: result!.public_id,
+                });
+              }
+            }
+          );
+          stream.end(file.buffer);
+        }),
+        (err) => {
+          console.warn(`[CircuitBreaker] Cloudinary tripped or failed (${err.message}). Seamlessly falling back to local disk storage.`);
+          return saveToLocalStorage();
+        }
+      );
     }
 
     // 2. Local fallback storage path
-    console.log(`[Upload] Cloudinary not configured. Storing file "${file.originalname}" locally.`);
-    
-    const uploadsDir = path.join(__dirname, '../../uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const fileExt = path.extname(file.originalname);
-    const filename = `${folder}-${uniqueSuffix}${fileExt}`;
-    const destPath = path.join(uploadsDir, filename);
-
-    fs.writeFileSync(destPath, file.buffer);
-
-    const serverUrl = process.env.BACKEND_URL || 'http://localhost:5000';
-    const localUrl = `${serverUrl}/uploads/${filename}`;
-
-    return {
-      url: localUrl,
-      publicId: `local-${filename}`,
-    };
+    return saveToLocalStorage();
   }
 
   /**

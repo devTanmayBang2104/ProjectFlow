@@ -1,4 +1,12 @@
 import nodemailer from 'nodemailer';
+import { CircuitBreakerRegistry } from '../utils/circuitBreaker';
+
+const mailCircuitBreaker = CircuitBreakerRegistry.getOrCreate({
+  name: 'smtp-mailer',
+  failureThreshold: 5,
+  cooldownPeriodMs: 30000,
+  timeoutMs: 8000,
+});
 
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = Number(process.env.SMTP_PORT) || 587;
@@ -53,18 +61,21 @@ export const sendVerificationEmail = async (email: string, name: string, token: 
   `;
 
   if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: SMTP_FROM,
-        to: email,
-        subject,
-        html,
-      });
-      console.log(`[Email] Verification email sent to ${email}`);
-    } catch (err) {
-      console.error(`[Email SMTP Error] Failed to send verification mail to ${email}:`, err);
-      logDevEmailBackup(email, verifyUrl, 'Verification');
-    }
+    await mailCircuitBreaker.execute(
+      async () => {
+        await transporter.sendMail({
+          from: SMTP_FROM,
+          to: email,
+          subject,
+          html,
+        });
+        console.log(`[Email] Verification email sent to ${email}`);
+      },
+      (err) => {
+        console.warn(`[CircuitBreaker] SMTP Mailer tripped or failed (${err.message}). Logging dev email backup.`);
+        logDevEmailBackup(email, verifyUrl, 'Verification');
+      }
+    );
   } else {
     logDevEmailBackup(email, verifyUrl, 'Verification');
   }
@@ -91,18 +102,21 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
   `;
 
   if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: SMTP_FROM,
-        to: email,
-        subject,
-        html,
-      });
-      console.log(`[Email] Password reset email sent to ${email}`);
-    } catch (err) {
-      console.error(`[Email SMTP Error] Failed to send password reset mail to ${email}:`, err);
-      logDevEmailBackup(email, resetUrl, 'Password Reset');
-    }
+    await mailCircuitBreaker.execute(
+      async () => {
+        await transporter.sendMail({
+          from: SMTP_FROM,
+          to: email,
+          subject,
+          html,
+        });
+        console.log(`[Email] Password reset email sent to ${email}`);
+      },
+      (err) => {
+        console.warn(`[CircuitBreaker] SMTP Mailer tripped or failed (${err.message}). Logging dev email backup.`);
+        logDevEmailBackup(email, resetUrl, 'Password Reset');
+      }
+    );
   } else {
     logDevEmailBackup(email, resetUrl, 'Password Reset');
   }

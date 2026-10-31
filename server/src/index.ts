@@ -39,8 +39,10 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 
 import { initCronJobs } from './services/cron.service';
+import { initBackgroundWorkers } from './workers';
 import { apiLimiter } from './middlewares/rateLimit.middleware';
 import { csrfProtection } from './middlewares/csrf.middleware';
+import { idempotencyMiddleware } from './middlewares/idempotency.middleware';
 import { errorHandler } from './middlewares/error.middleware';
 import { devFallbackMiddleware } from './middlewares/devFallback';
 
@@ -92,7 +94,7 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'Idempotency-Key', 'X-Idempotency-Key'],
   })
 );
 
@@ -109,6 +111,9 @@ app.use('/api', apiLimiter);
 
 // 5. CSRF Protection (Double-Submit Cookie validation)
 app.use('/api', csrfProtection);
+
+// System Design: Idempotency Key protection for state-mutating requests
+app.use('/api', idempotencyMiddleware);
 
 // Development offline fallback middleware (only active when explicitly enabled)
 if (process.env.OFFLINE_MODE === 'true') {
@@ -132,8 +137,9 @@ app.get('/health', (req: express.Request, res: express.Response) => {
 // 7. Global Catch-All Error Handler (must be registered last)
 app.use(errorHandler);
 
-// 8. Initialize Background Cron Services
+// 8. Initialize Background Cron Services & Job Queue Workers
 initCronJobs();
+initBackgroundWorkers();
 
 // 9. Startup Server Wrapper for Http & Socket.IO
 const httpServer = createServer(app);

@@ -27,6 +27,10 @@ apiClient.interceptors.request.use(
     if (csrfToken) {
       config.headers['X-CSRF-Token'] = csrfToken;
     }
+    // Attach Idempotency-Key if provided in request config
+    if (config.idempotencyKey) {
+      config.headers['Idempotency-Key'] = config.idempotencyKey;
+    }
     return config;
   },
   (error) => {

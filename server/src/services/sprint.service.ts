@@ -3,6 +3,7 @@ import { SprintStatus, ActivityAction } from '@prisma/client';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { ActivityLogService } from './activity.service';
 import cacheService from './cache.service';
+import queueService from './queue.service';
 
 const activityLog = new ActivityLogService();
 
@@ -118,6 +119,16 @@ export class SprintService {
       where: { id: sprintId },
       data: updateData,
     });
+
+    // Asynchronous Fan-Out: When a sprint completes, push to job queue for background processing
+    if (data.status === SprintStatus.COMPLETED && sprint.status !== SprintStatus.COMPLETED) {
+      await queueService.enqueue('sprint-jobs', 'sprint.completed', {
+        sprintId,
+        projectId: sprint.projectId,
+        workspaceId: sprint.project.workspaceId,
+        userId,
+      });
+    }
 
     await activityLog.log(
       sprint.project.workspaceId,
