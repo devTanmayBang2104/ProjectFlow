@@ -6,6 +6,7 @@ import { toggleTheme } from '../features/themeSlice';
 import { openModal } from '../features/uiSlice';
 import { useProfile, useLogout } from '../hooks/useAuth';
 import { useActiveWorkspace } from '../hooks/useActiveWorkspace';
+import NotificationDropdown from './NotificationDropdown';
 import { assets } from '../assets/assets';
 
 const Navbar = ({ setIsSidebarOpen }) => {
@@ -157,6 +158,9 @@ const Navbar = ({ setIsSidebarOpen }) => {
                                 : (<SunIcon className="size-4 text-yellow-400" />)
                         }
                     </button>
+
+                    {/* Notifications Dropdown */}
+                    <NotificationDropdown />
 
                     {/* User Profile Button and Dropdown */}
                     <div className="relative" ref={menuRef}>
