@@ -59,6 +59,15 @@ export const updateSubtaskSchema = z.object({
 export const createCommentSchema = z.object({
   body: z.object({
     content: z.string().min(1, 'Comment content cannot be empty'),
+    parentId: z.string().uuid('Parent comment ID must be a valid UUID').optional().nullable(),
+  }),
+});
+
+export const reactCommentSchema = z.object({
+  body: z.object({
+    emoji: z.enum(['👍', '❤️', '🚀', '🎉', '👀'], {
+      errorMap: () => ({ message: 'Unsupported reaction emoji. Supported: 👍, ❤️, 🚀, 🎉, 👀' })
+    }),
   }),
 });
 

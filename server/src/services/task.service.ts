@@ -459,13 +459,36 @@ export class TaskService {
 
   // --- COMMENTS ---
 
-  public async addComment(taskId: string, userId: string, content: string): Promise<any> {
+  public async addComment(taskId: string, userId: string, content: string, parentId?: string | null): Promise<any> {
     const task = await prisma.task.findUnique({
       where: { id: taskId },
-      include: { project: true }
+      include: {
+        project: {
+          include: {
+            workspace: {
+              include: {
+                members: {
+                  include: {
+                    user: {
+                      select: { id: true, name: true, username: true, email: true }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     });
     if (!task) {
       throw new NotFoundError('Task not found.');
+    }
+
+    if (parentId) {
+      const parentComment = await prisma.comment.findUnique({ where: { id: parentId } });
+      if (!parentComment || parentComment.taskId !== taskId) {
+        throw new BadRequestError('Parent comment does not exist on this task.');
+      }
     }
 
     const comment = await prisma.comment.create({
@@ -473,6 +496,8 @@ export class TaskService {
         taskId,
         userId,
         content,
+        parentId: parentId || null,
+        reactions: {},
       },
       include: {
         user: {
@@ -481,8 +506,61 @@ export class TaskService {
       }
     });
 
-    // Notify assignee (if not the creator)
-    if (task.assigneeId && task.assigneeId !== userId) {
+    // 1. Extract @mentions from comment content (supports @username or @[Name](id) or @Name)
+    const mentionRegex = /@(\w+)/g;
+    const matches = Array.from(content.matchAll(mentionRegex), (m) => m[1].toLowerCase());
+    const workspaceMembers = task.project.workspace.members;
+
+    const mentionedUserIds = new Set<string>();
+    for (const match of matches) {
+      const matchedMember = workspaceMembers.find(
+        (m) =>
+          m.user.username?.toLowerCase() === match ||
+          m.user.name.toLowerCase().replace(/\s+/g, '') === match ||
+          m.user.name.toLowerCase().split(' ')[0] === match
+      );
+      if (matchedMember && matchedMember.userId !== userId) {
+        mentionedUserIds.add(matchedMember.userId);
+      }
+    }
+
+    // Dispatch @mention notifications
+    for (const mentionedId of mentionedUserIds) {
+      try {
+        await notification.create(
+          mentionedId,
+          `Mentioned in task: "${task.title}"`,
+          `${comment.user.name} mentioned you in a comment: "${content.substring(0, 50)}..."`,
+          NotificationType.TASK_MENTION,
+          'TASK',
+          taskId
+        );
+      } catch (err) {
+        console.error(`[Notification Error] Failed to notify mentioned user ${mentionedId}:`, err);
+      }
+    }
+
+    // 2. Notify parent comment author if replying to a thread
+    if (parentId) {
+      const parentComment = await prisma.comment.findUnique({ where: { id: parentId } });
+      if (parentComment && parentComment.userId !== userId && !mentionedUserIds.has(parentComment.userId)) {
+        await notification.create(
+          parentComment.userId,
+          'Reply to your comment',
+          `${comment.user.name} replied to your thread in "${task.title}"`,
+          NotificationType.TASK_COMMENT,
+          'TASK',
+          taskId
+        );
+      }
+    }
+
+    // 3. Notify assignee (if not commenter, not parent commenter, and not mentioned)
+    if (
+      task.assigneeId &&
+      task.assigneeId !== userId &&
+      !mentionedUserIds.has(task.assigneeId)
+    ) {
       await notification.create(
         task.assigneeId,
         'New Comment on Assigned Task',
@@ -500,16 +578,69 @@ export class TaskService {
       ActivityAction.COMMENT,
       'COMMENT',
       comment.id,
-      `commented on task "${task.title}"`,
+      parentId ? `replied to a comment on task "${task.title}"` : `commented on task "${task.title}"`,
       task.projectId
     );
 
     // Broadcast task change for real-time socket updates
     SocketService.broadcastTaskUpdate(task.project.workspaceId, taskId, 'update', {
       id: taskId,
+      commentId: comment.id,
+      parentId: comment.parentId,
     });
 
     return comment;
+  }
+
+  public async toggleReaction(commentId: string, userId: string, emoji: string): Promise<any> {
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      include: {
+        task: {
+          include: { project: true }
+        }
+      }
+    });
+
+    if (!comment) {
+      throw new NotFoundError('Comment not found.');
+    }
+
+    const currentReactions = (comment.reactions as Record<string, string[]>) || {};
+    const userList: string[] = currentReactions[emoji] || [];
+
+    let updatedList: string[];
+    if (userList.includes(userId)) {
+      // Remove reaction if already reacted
+      updatedList = userList.filter((id) => id !== userId);
+    } else {
+      // Add reaction
+      updatedList = [...userList, userId];
+    }
+
+    const updatedReactions = { ...currentReactions };
+    if (updatedList.length > 0) {
+      updatedReactions[emoji] = updatedList;
+    } else {
+      delete updatedReactions[emoji];
+    }
+
+    const updatedComment = await prisma.comment.update({
+      where: { id: commentId },
+      data: { reactions: updatedReactions },
+      include: {
+        user: { select: { id: true, name: true, image: true } }
+      }
+    });
+
+    // Real-time broadcast
+    SocketService.broadcastTaskUpdate(comment.task.project.workspaceId, comment.taskId, 'update', {
+      id: comment.taskId,
+      commentId,
+      reactions: updatedReactions,
+    });
+
+    return updatedComment;
   }
 
   public async deleteComment(commentId: string, userId: string): Promise<void> {

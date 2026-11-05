@@ -172,13 +172,30 @@ export const useDeleteSubtaskMutation = (taskId) => {
 // --- DISCUSSION COMMENTS ---
 
 /**
- * Add a comment to a task.
+ * Add a comment to a task (supports optional parentId for threaded replies).
  */
 export const useAddCommentMutation = (taskId) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (content) => {
-      const response = await apiClient.post(`/tasks/${taskId}/comments`, { content });
+    mutationFn: async ({ content, parentId = null }) => {
+      const payload = typeof content === 'string' ? { content, parentId } : content;
+      const response = await apiClient.post(`/tasks/${taskId}/comments`, payload);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+    },
+  });
+};
+
+/**
+ * Toggle an emoji reaction on a comment.
+ */
+export const useToggleReactionMutation = (taskId) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ commentId, emoji }) => {
+      const response = await apiClient.post(`/tasks/comments/${commentId}/reactions`, { emoji });
       return response.data.data;
     },
     onSuccess: () => {

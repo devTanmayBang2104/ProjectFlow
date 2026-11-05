@@ -293,15 +293,40 @@ export class TaskController {
     try {
       if (!req.user) throw new UnauthorizedError();
       const taskId = req.params.id;
-      const { content } = req.body;
+      const { content, parentId } = req.body;
 
       await this.checkTaskAccess(req.user.id, taskId);
-      const comment = await taskService.addComment(taskId, req.user.id, content);
+      const comment = await taskService.addComment(taskId, req.user.id, content, parentId);
 
       res.status(201).json({
         success: true,
         data: comment,
         message: 'Comment posted successfully.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public toggleReaction = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) throw new UnauthorizedError();
+      const { commentId } = req.params;
+      const { emoji } = req.body;
+
+      const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+        include: { task: { include: { project: true } } }
+      });
+      if (!comment) throw new NotFoundError('Comment not found.');
+
+      await this.checkTaskAccess(req.user.id, comment.taskId);
+      const updated = await taskService.toggleReaction(commentId, req.user.id, emoji);
+
+      res.status(200).json({
+        success: true,
+        data: updated,
+        message: 'Reaction updated.',
       });
     } catch (error) {
       next(error);

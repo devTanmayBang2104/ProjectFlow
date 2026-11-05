@@ -60,6 +60,7 @@ enum ActivityAction {
 enum NotificationType {
     TASK_ASSIGNED
     TASK_COMMENT
+    TASK_MENTION
     PROJECT_INVITE
     MEMBER_JOINED
     GENERAL
@@ -309,13 +310,19 @@ model Comment {
     content   String
     userId    String
     taskId    String
+    parentId  String?
+    reactions Json?
     createdAt DateTime @default(now())
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
     task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
+    parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+    replies Comment[] @relation("CommentReplies")
+
     @@index([taskId])
     @@index([userId])
+    @@index([parentId])
 }
 
 model ActivityLog {

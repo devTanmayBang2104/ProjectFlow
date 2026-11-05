@@ -4,14 +4,17 @@ import toast from "react-hot-toast";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { 
   CalendarIcon, MessageCircle, PenIcon, Loader2Icon, 
-  CheckSquare, Plus, Trash2, Paperclip, Download, X 
+  CheckSquare, Plus, Trash2, Paperclip, Download, X,
+  CornerDownLeft, Smile
 } from "lucide-react";
 import { useProfile } from "../hooks/useAuth";
 import { 
   useTaskDetailsQuery, useAddCommentMutation, useDeleteCommentMutation,
+  useToggleReactionMutation,
   useAddSubtaskMutation, useUpdateSubtaskMutation, useDeleteSubtaskMutation,
   useUploadAttachmentMutation, useDeleteAttachmentMutation, useDeleteTaskMutation 
 } from "../hooks/useTasks";
+import CommentEditor from "../components/CommentEditor";
 
 const TaskDetails = () => {
     const [searchParams] = useSearchParams();
@@ -25,10 +28,12 @@ const TaskDetails = () => {
     const [newComment, setNewComment] = useState("");
     const [newSubtask, setNewSubtask] = useState("");
     const [uploading, setUploading] = useState(false);
+    const [replyingTo, setReplyingTo] = useState(null);
 
     // Mutations
     const addCommentMutation = useAddCommentMutation(taskId);
     const deleteCommentMutation = useDeleteCommentMutation(taskId);
+    const toggleReactionMutation = useToggleReactionMutation(taskId);
     const addSubtaskMutation = useAddSubtaskMutation(taskId);
     const updateSubtaskMutation = useUpdateSubtaskMutation(taskId);
     const deleteSubtaskMutation = useDeleteSubtaskMutation(taskId);
@@ -36,17 +41,28 @@ const TaskDetails = () => {
     const deleteAttachmentMutation = useDeleteAttachmentMutation(taskId);
     const deleteTaskMutation = useDeleteTaskMutation(task?.projectId || projectIdParam);
 
-    const handleAddComment = async () => {
-        if (!newComment.trim()) return;
+    const handleAddComment = async (content) => {
+        if (!content || !content.trim()) return;
         try {
-            toast.loading("Posting comment...");
-            await addCommentMutation.mutateAsync(newComment);
-            setNewComment("");
+            toast.loading(replyingTo ? "Posting reply..." : "Posting comment...");
+            await addCommentMutation.mutateAsync({
+                content,
+                parentId: replyingTo?.id || null,
+            });
+            setReplyingTo(null);
             toast.dismissAll();
-            toast.success("Comment added.");
+            toast.success(replyingTo ? "Reply posted." : "Comment added.");
         } catch (error) {
             toast.dismissAll();
             toast.error(error?.response?.data?.error?.message || error.message);
+        }
+    };
+
+    const handleToggleReaction = async (commentId, emoji) => {
+        try {
+            await toggleReactionMutation.mutateAsync({ commentId, emoji });
+        } catch (error) {
+            toast.error(error?.response?.data?.error?.message || "Failed to update reaction");
         }
     };
 
@@ -240,53 +256,137 @@ const TaskDetails = () => {
 
                     <div className="flex-1 overflow-y-auto max-h-96 pr-2 mb-4 space-y-4">
                         {comments.length > 0 ? (
-                            comments.map((comment) => (
-                                <div 
-                                    key={comment.id} 
-                                    className={`max-w-[85%] border p-3 rounded-xl ${comment.userId === user?.id ? "ml-auto bg-blue-50 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30" : "mr-auto bg-slate-50 border-slate-200 dark:bg-zinc-900 dark:border-zinc-800"}`}
-                                >
-                                    <div className="flex items-center justify-between gap-4 mb-1 text-xs text-gray-500 dark:text-zinc-400">
-                                        <div className="flex items-center gap-1.5">
-                                            <img 
-                                                src={comment.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.name || 'User')}&background=random`} 
-                                                alt="avatar" 
-                                                className="size-5 rounded-full object-cover" 
-                                                referrerPolicy="no-referrer"
-                                            />
-                                            <span className="font-semibold text-slate-800 dark:text-zinc-200">{comment.user?.name}</span>
-                                            <span className="text-[10px] text-slate-400 dark:text-zinc-500">
-                                                • {format(new Date(comment.createdAt), "dd MMM, HH:mm")}
-                                            </span>
+                            comments
+                                .filter((c) => !c.parentId) // Top-level comments
+                                .map((comment) => {
+                                    const replies = comments.filter((c) => c.parentId === comment.id);
+                                    const reactions = comment.reactions || {};
+
+                                    const renderCommentBox = (c, isReply = false) => {
+                                        const cReactions = c.reactions || {};
+                                        const isMyComment = c.userId === user?.id;
+
+                                        return (
+                                            <div
+                                                key={c.id}
+                                                className={`p-3 rounded-xl border ${
+                                                    isReply ? "ml-8 mt-2 border-l-2 border-l-blue-400 dark:border-l-blue-500" : ""
+                                                } ${
+                                                    isMyComment
+                                                        ? "bg-blue-50 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30"
+                                                        : "bg-slate-50 border-slate-200 dark:bg-zinc-900 dark:border-zinc-800"
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-between gap-4 mb-1 text-xs text-gray-500 dark:text-zinc-400">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <img
+                                                            src={
+                                                                c.user?.image ||
+                                                                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                                                    c.user?.name || "User"
+                                                                )}&background=random`
+                                                            }
+                                                            alt="avatar"
+                                                            className="size-5 rounded-full object-cover"
+                                                            referrerPolicy="no-referrer"
+                                                        />
+                                                        <span className="font-semibold text-slate-800 dark:text-zinc-200">
+                                                            {c.user?.name}
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-400 dark:text-zinc-500">
+                                                            • {format(new Date(c.createdAt), "dd MMM, HH:mm")}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {!isReply && (
+                                                            <button
+                                                                onClick={() => setReplyingTo(c)}
+                                                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                                                                title="Reply in thread"
+                                                            >
+                                                                <CornerDownLeft className="size-3" />
+                                                                <span>Reply</span>
+                                                            </button>
+                                                        )}
+                                                        {(c.userId === user?.id || isWorkspaceOwner || isWorkspaceAdmin) && (
+                                                            <button
+                                                                onClick={() => handleDeleteComment(c.id)}
+                                                                className="text-slate-400 hover:text-red-500 transition-colors"
+                                                                title="Delete comment"
+                                                            >
+                                                                <X className="size-3" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <p className="text-sm text-slate-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line">
+                                                    {c.content}
+                                                </p>
+
+                                                {/* Emoji Reactions Bar */}
+                                                <div className="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 border-t border-zinc-150 dark:border-zinc-850">
+                                                    {["👍", "❤️", "🚀", "🎉", "👀"].map((emoji) => {
+                                                        const reactedUsers = cReactions[emoji] || [];
+                                                        const hasReacted = reactedUsers.includes(user?.id);
+                                                        const count = reactedUsers.length;
+
+                                                        return (
+                                                            <button
+                                                                key={emoji}
+                                                                type="button"
+                                                                onClick={() => handleToggleReaction(c.id, emoji)}
+                                                                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-colors cursor-pointer ${
+                                                                    hasReacted
+                                                                        ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold border border-blue-300 dark:border-blue-700"
+                                                                        : "bg-white dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-750"
+                                                                }`}
+                                                                title={hasReacted ? `Remove ${emoji}` : `React with ${emoji}`}
+                                                            >
+                                                                <span>{emoji}</span>
+                                                                {count > 0 && <span className="text-[10px]">{count}</span>}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    };
+
+                                    return (
+                                        <div key={comment.id} className="space-y-1.5">
+                                            {renderCommentBox(comment, false)}
+                                            {replies.length > 0 && (
+                                                <div className="space-y-1.5">
+                                                    {replies.map((reply) => renderCommentBox(reply, true))}
+                                                </div>
+                                            )}
                                         </div>
-                                        {(comment.userId === user?.id || isWorkspaceOwner || isWorkspaceAdmin) && (
-                                            <button onClick={() => handleDeleteComment(comment.id)} className="text-slate-400 hover:text-red-500 transition-colors">
-                                                <X className="size-3" />
-                                            </button>
-                                        )}
-                                    </div>
-                                    <p className="text-sm text-slate-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line">{comment.content}</p>
-                                </div>
-                            ))
+                                    );
+                                })
                         ) : (
-                            <p className="text-slate-500 dark:text-zinc-500 text-center py-8 text-sm">No comments yet. Start the conversation!</p>
+                            <p className="text-slate-500 dark:text-zinc-500 text-center py-8 text-sm">
+                                No comments yet. Start the conversation!
+                            </p>
                         )}
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-end gap-3 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                        <textarea
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            placeholder="Write a comment..."
-                            className="w-full bg-zinc-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-md p-2.5 text-sm text-gray-900 dark:text-zinc-200 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            rows={2}
+                    <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                        <CommentEditor
+                            onSubmit={handleAddComment}
+                            isSubmitting={addCommentMutation.isPending}
+                            members={
+                                project?.workspace?.members?.map((m) => ({
+                                    id: m.user?.id || m.userId,
+                                    name: m.user?.name || "Teammate",
+                                    username: m.user?.username || "",
+                                    email: m.user?.email || "",
+                                    image: m.user?.image || "",
+                                })) || []
+                            }
+                            replyingTo={replyingTo}
+                            onCancelReply={() => setReplyingTo(null)}
                         />
-                        <button 
-                            onClick={handleAddComment} 
-                            disabled={!newComment.trim() || addCommentMutation.isPending}
-                            className="bg-blue-600 hover:bg-blue-500 transition-colors text-white text-sm px-5 py-2.5 rounded font-semibold disabled:opacity-50 cursor-pointer"
-                        >
-                            Post
-                        </button>
                     </div>
                 </div>
             </div>
