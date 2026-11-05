@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -8,8 +8,9 @@ import {
   CornerDownLeft, Smile
 } from "lucide-react";
 import { useProfile } from "../hooks/useAuth";
+import { useActiveWorkspace } from "../hooks/useActiveWorkspace";
 import { 
-  useTaskDetailsQuery, useAddCommentMutation, useDeleteCommentMutation,
+  useTaskDetailsQuery, useAddCommentMutation, useUpdateCommentMutation, useDeleteCommentMutation,
   useToggleReactionMutation,
   useAddSubtaskMutation, useUpdateSubtaskMutation, useDeleteSubtaskMutation,
   useUploadAttachmentMutation, useDeleteAttachmentMutation, useDeleteTaskMutation 
@@ -23,15 +24,19 @@ const TaskDetails = () => {
     const navigate = useNavigate();
 
     const { data: user } = useProfile();
+    const { currentWorkspace } = useActiveWorkspace();
     const { data: task, isLoading: isTaskLoading } = useTaskDetailsQuery(taskId);
 
     const [newComment, setNewComment] = useState("");
     const [newSubtask, setNewSubtask] = useState("");
     const [uploading, setUploading] = useState(false);
     const [replyingTo, setReplyingTo] = useState(null);
+    const [editingCommentId, setEditingCommentId] = useState(null);
+    const [editingText, setEditingText] = useState("");
 
     // Mutations
     const addCommentMutation = useAddCommentMutation(taskId);
+    const updateCommentMutation = useUpdateCommentMutation(taskId);
     const deleteCommentMutation = useDeleteCommentMutation(taskId);
     const toggleReactionMutation = useToggleReactionMutation(taskId);
     const addSubtaskMutation = useAddSubtaskMutation(taskId);
@@ -76,6 +81,21 @@ const TaskDetails = () => {
         } catch (error) {
             toast.dismissAll();
             toast.error(error?.response?.data?.error?.message || error.message);
+        }
+    };
+
+    const handleSaveEditComment = async (commentId) => {
+        if (!editingText.trim()) return;
+        try {
+            await updateCommentMutation.mutateAsync({
+                commentId,
+                content: editingText.trim(),
+            });
+            setEditingCommentId(null);
+            setEditingText("");
+            toast.success("Comment updated.");
+        } catch (error) {
+            toast.error(error?.response?.data?.error?.message || "Failed to update comment");
         }
     };
 
@@ -194,6 +214,69 @@ const TaskDetails = () => {
     );
     const hasChecklistPermission = isTeamLead || isWorkspaceOwner || isWorkspaceAdmin;
 
+    // Aggregate workspace & project teammates for @mentions autocomplete
+    const teammates = useMemo(() => {
+        const list = [];
+        const seen = new Set();
+
+        const addMember = (u) => {
+            if (!u || !u.id || seen.has(u.id)) return;
+            seen.add(u.id);
+            list.push({
+                id: u.id,
+                name: u.name || u.email?.split("@")[0] || "Teammate",
+                username: u.username || u.name?.replace(/\s+/g, "").toLowerCase() || u.email?.split("@")[0] || "user",
+                email: u.email || "",
+                image: u.image || "",
+            });
+        };
+
+        // 1. Current active workspace members
+        if (currentWorkspace?.members) {
+            currentWorkspace.members.forEach((m) => addMember(m.user || m));
+        }
+
+        // 2. Task project workspace members
+        if (project?.workspace?.members) {
+            project.workspace.members.forEach((m) => addMember(m.user || m));
+        }
+
+        // 3. Task project members
+        if (project?.members) {
+            project.members.forEach((m) => addMember(m.user || m));
+        }
+
+        // 4. Task assignee
+        if (task?.assignee) {
+            addMember(task.assignee);
+        }
+
+        // 5. Current logged in user
+        if (user) {
+            addMember(user);
+        }
+
+        return list;
+    }, [currentWorkspace, project, task, user]);
+
+    const renderCommentContent = (text) => {
+        if (!text) return null;
+        const parts = text.split(/(@[a-zA-Z0-9._-]+)/g);
+        return parts.map((part, i) => {
+            if (part.startsWith("@") && part.length > 1) {
+                return (
+                    <span
+                        key={i}
+                        className="font-medium px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 inline-block text-xs"
+                    >
+                        {part}
+                    </span>
+                );
+            }
+            return part;
+        });
+    };
+
     return (
         <div className="flex flex-col-reverse lg:flex-row gap-6 sm:p-4 text-gray-900 dark:text-zinc-100 max-w-6xl mx-auto">
             {/* Left: Comments & Checklist */}
@@ -260,11 +343,11 @@ const TaskDetails = () => {
                                 .filter((c) => !c.parentId) // Top-level comments
                                 .map((comment) => {
                                     const replies = comments.filter((c) => c.parentId === comment.id);
-                                    const reactions = comment.reactions || {};
 
                                     const renderCommentBox = (c, isReply = false) => {
                                         const cReactions = c.reactions || {};
                                         const isMyComment = c.userId === user?.id;
+                                        const isEditing = editingCommentId === c.id;
 
                                         return (
                                             <div
@@ -297,32 +380,82 @@ const TaskDetails = () => {
                                                             • {format(new Date(c.createdAt), "dd MMM, HH:mm")}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        {!isReply && (
+                                                    <div className="flex items-center gap-1">
+                                                        {!isReply && !isEditing && (
                                                             <button
                                                                 onClick={() => setReplyingTo(c)}
-                                                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                                                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 px-1.5 py-0.5 rounded cursor-pointer"
                                                                 title="Reply in thread"
                                                             >
                                                                 <CornerDownLeft className="size-3" />
                                                                 <span>Reply</span>
                                                             </button>
                                                         )}
-                                                        {(c.userId === user?.id || isWorkspaceOwner || isWorkspaceAdmin) && (
+                                                        {isMyComment && !isEditing && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    setEditingCommentId(c.id);
+                                                                    setEditingText(c.content);
+                                                                }}
+                                                                className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 p-1 rounded cursor-pointer transition-colors"
+                                                                title="Edit comment"
+                                                            >
+                                                                <PenIcon className="size-3" />
+                                                            </button>
+                                                        )}
+                                                        {(isMyComment || isWorkspaceOwner || isWorkspaceAdmin) && !isEditing && (
                                                             <button
                                                                 onClick={() => handleDeleteComment(c.id)}
-                                                                className="text-slate-400 hover:text-red-500 transition-colors"
+                                                                className="text-slate-400 hover:text-red-500 p-1 rounded cursor-pointer transition-colors"
                                                                 title="Delete comment"
                                                             >
-                                                                <X className="size-3" />
+                                                                <Trash2 className="size-3" />
                                                             </button>
                                                         )}
                                                     </div>
                                                 </div>
 
-                                                <p className="text-sm text-slate-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line">
-                                                    {c.content}
-                                                </p>
+                                                {/* Comment Content or Edit Box */}
+                                                {isEditing ? (
+                                                    <div className="mt-2 space-y-2">
+                                                        <textarea
+                                                            value={editingText}
+                                                            onChange={(e) => setEditingText(e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === "Escape") setEditingCommentId(null);
+                                                                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSaveEditComment(c.id);
+                                                            }}
+                                                            rows={2}
+                                                            className="w-full rounded-lg border border-blue-400 dark:border-blue-500 bg-white dark:bg-zinc-850 p-2.5 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none"
+                                                            placeholder="Edit your comment..."
+                                                            autoFocus
+                                                        />
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setEditingCommentId(null)}
+                                                                className="px-2.5 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 cursor-pointer"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                disabled={!editingText.trim() || updateCommentMutation.isPending}
+                                                                onClick={() => handleSaveEditComment(c.id)}
+                                                                className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold disabled:opacity-50 cursor-pointer"
+                                                            >
+                                                                {updateCommentMutation.isPending && (
+                                                                    <Loader2Icon className="size-3 animate-spin" />
+                                                                )}
+                                                                <span>Save</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm text-slate-800 dark:text-zinc-200 leading-relaxed whitespace-pre-line">
+                                                        {renderCommentContent(c.content)}
+                                                    </p>
+                                                )}
 
                                                 {/* Emoji Reactions Bar */}
                                                 <div className="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 border-t border-zinc-150 dark:border-zinc-850">
@@ -375,27 +508,7 @@ const TaskDetails = () => {
                         <CommentEditor
                             onSubmit={handleAddComment}
                             isSubmitting={addCommentMutation.isPending}
-                            members={
-                                (() => {
-                                    const projectMembers = project?.members?.map((m) => m.user) || [];
-                                    const workspaceMembers = project?.workspace?.members?.map((m) => m.user) || [];
-                                    
-                                    // Merge members by user ID to avoid duplicates
-                                    const memberMap = new Map();
-                                    [...workspaceMembers, ...projectMembers].forEach((u) => {
-                                        if (u && u.id && !memberMap.has(u.id)) {
-                                            memberMap.set(u.id, {
-                                                id: u.id,
-                                                name: u.name || "Member",
-                                                username: u.username || "",
-                                                email: u.email || "",
-                                                image: u.image || "",
-                                            });
-                                        }
-                                    });
-                                    return Array.from(memberMap.values());
-                                })()
-                            }
+                            members={teammates}
                             replyingTo={replyingTo}
                             onCancelReply={() => setReplyingTo(null)}
                         />

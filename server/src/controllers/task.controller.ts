@@ -52,6 +52,7 @@ export class TaskController {
       include: {
         project: {
           include: {
+            workspace: { select: { ownerId: true } },
             members: { select: { userId: true } }
           }
         }
@@ -72,8 +73,10 @@ export class TaskController {
       throw new ForbiddenError('Access Denied. You do not belong to this workspace.');
     }
 
-    const isAdmin = member.role === 'ADMIN';
+    const isOwner = (task.project as any)?.workspace?.ownerId === userId;
+    const isAdmin = member.role === 'ADMIN' || isOwner;
     const isProjectMember = task.project.members.some((m) => m.userId === userId) || task.project.team_lead === userId;
+    const isAssignee = task.assigneeId === userId;
 
     if (requiredAccess === 'delete') {
       const isTeamLead = task.project.team_lead === userId;
@@ -81,7 +84,7 @@ export class TaskController {
         throw new ForbiddenError('Access Denied. Only the Team Lead or an Administrator can delete tasks.');
       }
     } else {
-      if (!isAdmin && !isProjectMember) {
+      if (!isAdmin && !isProjectMember && !isAssignee) {
         throw new ForbiddenError('Access Denied. You must be a project member or a workspace administrator.');
       }
     }
@@ -327,6 +330,31 @@ export class TaskController {
         success: true,
         data: updated,
         message: 'Reaction updated.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public updateComment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) throw new UnauthorizedError();
+      const { commentId } = req.params;
+      const { content } = req.body;
+
+      const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+        include: { task: { include: { project: true } } }
+      });
+      if (!comment) throw new NotFoundError('Comment not found.');
+
+      await this.checkTaskAccess(req.user.id, comment.taskId);
+      const updated = await taskService.updateComment(commentId, req.user.id, content);
+
+      res.status(200).json({
+        success: true,
+        data: updated,
+        message: 'Comment updated successfully.',
       });
     } catch (error) {
       next(error);

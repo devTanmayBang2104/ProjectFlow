@@ -205,6 +205,22 @@ export const useToggleReactionMutation = (taskId) => {
 };
 
 /**
+ * Update an existing comment on a task.
+ */
+export const useUpdateCommentMutation = (taskId) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ commentId, content }) => {
+      const response = await apiClient.put(`/tasks/comments/${commentId}`, { content });
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+    },
+  });
+};
+
+/**
  * Delete a comment from a task.
  */
 export const useDeleteCommentMutation = (taskId) => {

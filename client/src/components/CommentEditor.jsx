@@ -22,7 +22,7 @@ export default function CommentEditor({
 
   // Filter members list based on query typed after '@'
   const filteredMembers = useMemo(() => {
-    if (!mentionQuery) return members.slice(0, 6);
+    if (!mentionQuery) return members.slice(0, 8);
     const q = mentionQuery.toLowerCase();
     return members
       .filter(
@@ -31,7 +31,7 @@ export default function CommentEditor({
           (m.username && m.username.toLowerCase().includes(q)) ||
           (m.email && m.email.toLowerCase().includes(q))
       )
-      .slice(0, 6);
+      .slice(0, 8);
   }, [members, mentionQuery]);
 
   const handleInputChange = (e) => {
@@ -40,7 +40,7 @@ export default function CommentEditor({
 
     const cursorPos = e.target.selectionStart;
     const textBeforeCursor = val.slice(0, cursorPos);
-    const lastAtMatch = textBeforeCursor.match(/@([a-zA-Z0-9._-]*)$/);
+    const lastAtMatch = textBeforeCursor.match(/(?:^|\s)@([a-zA-Z0-9._-]*)$/);
 
     if (lastAtMatch) {
       setMentionQuery(lastAtMatch[1]);
@@ -57,9 +57,12 @@ export default function CommentEditor({
     const textBeforeCursor = content.slice(0, cursorPos);
     const textAfterCursor = content.slice(cursorPos);
 
-    // Replace the '@query' before the cursor with '@[Name]' or '@username'
+    // Replace the '@query' before the cursor with '@Name'
     const mentionTag = `@${member.username || member.name.replace(/\s+/g, "")} `;
-    const newTextBefore = textBeforeCursor.replace(/@([a-zA-Z0-9._-]*)$/, mentionTag);
+    const newTextBefore = textBeforeCursor.replace(/(?:^|\s)@([a-zA-Z0-9._-]*)$/, (match) => {
+      const startsWithSpace = match.startsWith(" ");
+      return (startsWithSpace ? " " : "") + mentionTag;
+    });
 
     const newContent = newTextBefore + textAfterCursor;
     setContent(newContent);
@@ -70,6 +73,22 @@ export default function CommentEditor({
         textareaRef.current.focus();
         const nextPos = newTextBefore.length;
         textareaRef.current.setSelectionRange(nextPos, nextPos);
+      }
+    }, 0);
+  };
+
+  const triggerAtMention = () => {
+    if (!textareaRef.current) return;
+    const newContent = content ? (content.endsWith(" ") ? content + "@" : content + " @") : "@";
+    setContent(newContent);
+    setMentionQuery("");
+    setShowMentions(true);
+    setSelectedIndex(0);
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const len = newContent.length;
+        textareaRef.current.setSelectionRange(len, len);
       }
     }, 0);
   };
@@ -148,9 +167,13 @@ export default function CommentEditor({
       {/* Action Footer */}
       <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 rounded-b-lg">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-zinc-400 dark:text-zinc-500 flex items-center gap-1">
+          <button
+            type="button"
+            onClick={triggerAtMention}
+            className="text-[11px] text-zinc-500 hover:text-blue-600 dark:text-zinc-400 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
+          >
             <AtSign className="size-3" /> Type <kbd className="px-1 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-[10px] font-mono">@</kbd> to mention
-          </span>
+          </button>
           <span className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:inline">
             • <kbd className="px-1 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-[10px] font-mono">Ctrl+Enter</kbd> to post
           </span>
@@ -167,54 +190,59 @@ export default function CommentEditor({
       </div>
 
       {/* Floating Mentions Autocomplete Box */}
-      {showMentions && filteredMembers.length > 0 && (
+      {showMentions && (
         <div
-          className="absolute z-50 w-64 rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 shadow-2xl overflow-hidden py-1.5"
-          style={{ bottom: "100%", left: 8, marginBottom: 8 }}
+          className="absolute z-50 w-72 rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 shadow-2xl overflow-hidden py-1.5 bottom-full left-2 mb-2"
         >
-          <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
             <span>Project & Team Members</span>
             <span>{filteredMembers.length} found</span>
           </div>
-          <div className="max-h-48 overflow-y-auto">
-            {filteredMembers.map((member, idx) => (
-              <button
-                key={member.id}
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault(); // prevent losing textarea focus
-                  insertMention(member);
-                }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left cursor-pointer transition-colors ${
-                  idx === selectedIndex
-                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold"
-                    : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                }`}
-              >
-                <img
-                  src={
-                    member.image ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || "Member")}&background=random`
-                  }
-                  alt={member.name}
-                  className="size-6 rounded-full object-cover flex-shrink-0"
-                />
-                <div className="truncate min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold truncate text-zinc-800 dark:text-zinc-100">
-                      {member.name}
-                    </span>
-                    {member.username && (
-                      <span className="text-[10px] text-zinc-400 font-mono">@{member.username}</span>
+          {filteredMembers.length > 0 ? (
+            <div className="max-h-48 overflow-y-auto">
+              {filteredMembers.map((member, idx) => (
+                <button
+                  key={member.id}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault(); // prevent losing textarea focus
+                    insertMention(member);
+                  }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left cursor-pointer transition-colors ${
+                    idx === selectedIndex
+                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold"
+                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  <img
+                    src={
+                      member.image ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || "Member")}&background=random`
+                    }
+                    alt={member.name}
+                    className="size-6 rounded-full object-cover flex-shrink-0"
+                  />
+                  <div className="truncate min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold truncate text-zinc-800 dark:text-zinc-100">
+                        {member.name}
+                      </span>
+                      {member.username && (
+                        <span className="text-[10px] text-zinc-400 font-mono">@{member.username}</span>
+                      )}
+                    </div>
+                    {member.email && (
+                      <span className="block text-[10px] text-zinc-400 truncate">{member.email}</span>
                     )}
                   </div>
-                  {member.email && (
-                    <span className="block text-[10px] text-zinc-400 truncate">{member.email}</span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="px-4 py-3 text-xs text-zinc-400 dark:text-zinc-500 text-center">
+              {members.length === 0 ? "No project members found" : `No members matching "@${mentionQuery}"`}
+            </div>
+          )}
         </div>
       )}
     </div>

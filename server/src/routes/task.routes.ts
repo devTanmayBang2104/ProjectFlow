@@ -9,6 +9,7 @@ import {
   createSubtaskSchema,
   updateSubtaskSchema,
   createCommentSchema,
+  updateCommentSchema,
   reactCommentSchema,
   createLabelSchema,
 } from '../validators/task.validator';
@@ -34,6 +35,7 @@ router.delete('/subtasks/:subtaskId', controller.deleteSubtask);
 
 // Comments
 router.post('/:id/comments', validateRequest(createCommentSchema), controller.addComment);
+router.put('/comments/:commentId', validateRequest(updateCommentSchema), controller.updateComment);
 router.delete('/comments/:commentId', controller.deleteComment);
 router.post('/comments/:commentId/reactions', validateRequest(reactCommentSchema), controller.toggleReaction);
 

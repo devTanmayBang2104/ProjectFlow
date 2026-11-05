@@ -667,6 +667,51 @@ export class TaskService {
     return updatedComment;
   }
 
+  public async updateComment(commentId: string, userId: string, content: string): Promise<any> {
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      include: {
+        task: {
+          include: {
+            project: {
+              include: {
+                workspace: {
+                  include: {
+                    members: {
+                      include: {
+                        user: { select: { id: true, name: true, username: true, email: true } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!comment) throw new NotFoundError('Comment not found.');
+    if (comment.userId !== userId) {
+      throw new ForbiddenError('You can only edit your own comments.');
+    }
+
+    const updated = await prisma.comment.update({
+      where: { id: commentId },
+      data: { content },
+      include: {
+        user: { select: { id: true, name: true, image: true } }
+      }
+    });
+
+    SocketService.broadcastTaskUpdate(comment.task.project.workspaceId, comment.taskId, 'update', {
+      id: comment.taskId,
+      commentId,
+    });
+
+    return updated;
+  }
+
   public async deleteComment(commentId: string, userId: string): Promise<void> {
     const comment = await prisma.comment.findUnique({
       where: { id: commentId },

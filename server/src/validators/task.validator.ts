@@ -63,11 +63,15 @@ export const createCommentSchema = z.object({
   }),
 });
 
+export const updateCommentSchema = z.object({
+  body: z.object({
+    content: z.string().min(1, 'Comment content cannot be empty'),
+  }),
+});
+
 export const reactCommentSchema = z.object({
   body: z.object({
-    emoji: z.enum(['👍', '❤️', '🚀', '🎉', '👀'], {
-      errorMap: () => ({ message: 'Unsupported reaction emoji. Supported: 👍, ❤️, 🚀, 🎉, 👀' })
-    }),
+    emoji: z.enum(['👍', '❤️', '🚀', '🎉', '👀']),
   }),
 });
 
