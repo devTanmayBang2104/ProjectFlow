@@ -22,7 +22,7 @@ export default class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-900 text-zinc-100 p-6 text-center">
-          <div className="max-w-md w-full bg-zinc-850 border border-zinc-750 rounded-2xl p-6 shadow-2xl">
+          <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl">
             <h2 className="text-xl font-bold text-red-400 mb-2">Something went wrong</h2>
             <p className="text-sm text-zinc-400 mb-4">
               An unexpected error occurred while rendering this page.

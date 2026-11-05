@@ -426,7 +426,7 @@ const TaskDetails = () => {
                                                                 if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSaveEditComment(c.id);
                                                             }}
                                                             rows={2}
-                                                            className="w-full rounded-lg border border-blue-400 dark:border-blue-500 bg-white dark:bg-zinc-850 p-2.5 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none"
+                                                            className="w-full rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                                             placeholder="Edit your comment..."
                                                             autoFocus
                                                         />
