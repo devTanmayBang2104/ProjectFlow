@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { useSocketSync } from "./hooks/useSocketSync";
 
 // Route-level code splitting
@@ -32,7 +33,7 @@ const PageLoader = () => (
 const App = () => {
     useSocketSync();
     return (
-        <>
+        <ErrorBoundary>
             <Toaster />
             <Suspense fallback={<PageLoader />}>
                 <Routes>
@@ -62,7 +63,7 @@ const App = () => {
                     </Route>
                 </Routes>
             </Suspense>
-        </>
+        </ErrorBoundary>
     );
 };
 

@@ -46,6 +46,51 @@ const TaskDetails = () => {
     const deleteAttachmentMutation = useDeleteAttachmentMutation(taskId);
     const deleteTaskMutation = useDeleteTaskMutation(task?.projectId || projectIdParam);
 
+    // Aggregate workspace & project teammates for @mentions autocomplete (declared at top level to obey React hooks rules)
+    const teammates = useMemo(() => {
+        const list = [];
+        const seen = new Set();
+
+        const addMember = (u) => {
+            if (!u || !u.id || seen.has(u.id)) return;
+            seen.add(u.id);
+            list.push({
+                id: u.id,
+                name: u.name || u.email?.split("@")[0] || "Teammate",
+                username: u.username || u.name?.replace(/\s+/g, "").toLowerCase() || u.email?.split("@")[0] || "user",
+                email: u.email || "",
+                image: u.image || "",
+            });
+        };
+
+        // 1. Current active workspace members
+        if (currentWorkspace?.members) {
+            currentWorkspace.members.forEach((m) => addMember(m.user || m));
+        }
+
+        // 2. Task project workspace members
+        if (task?.project?.workspace?.members) {
+            task.project.workspace.members.forEach((m) => addMember(m.user || m));
+        }
+
+        // 3. Task project members
+        if (task?.project?.members) {
+            task.project.members.forEach((m) => addMember(m.user || m));
+        }
+
+        // 4. Task assignee
+        if (task?.assignee) {
+            addMember(task.assignee);
+        }
+
+        // 5. Current logged in user
+        if (user) {
+            addMember(user);
+        }
+
+        return list;
+    }, [currentWorkspace, task, user]);
+
     const handleAddComment = async (content) => {
         if (!content || !content.trim()) return;
         try {
@@ -213,51 +258,6 @@ const TaskDetails = () => {
         (m) => m.userId === user?.id && m.role === "ADMIN"
     );
     const hasChecklistPermission = isTeamLead || isWorkspaceOwner || isWorkspaceAdmin;
-
-    // Aggregate workspace & project teammates for @mentions autocomplete
-    const teammates = useMemo(() => {
-        const list = [];
-        const seen = new Set();
-
-        const addMember = (u) => {
-            if (!u || !u.id || seen.has(u.id)) return;
-            seen.add(u.id);
-            list.push({
-                id: u.id,
-                name: u.name || u.email?.split("@")[0] || "Teammate",
-                username: u.username || u.name?.replace(/\s+/g, "").toLowerCase() || u.email?.split("@")[0] || "user",
-                email: u.email || "",
-                image: u.image || "",
-            });
-        };
-
-        // 1. Current active workspace members
-        if (currentWorkspace?.members) {
-            currentWorkspace.members.forEach((m) => addMember(m.user || m));
-        }
-
-        // 2. Task project workspace members
-        if (project?.workspace?.members) {
-            project.workspace.members.forEach((m) => addMember(m.user || m));
-        }
-
-        // 3. Task project members
-        if (project?.members) {
-            project.members.forEach((m) => addMember(m.user || m));
-        }
-
-        // 4. Task assignee
-        if (task?.assignee) {
-            addMember(task.assignee);
-        }
-
-        // 5. Current logged in user
-        if (user) {
-            addMember(user);
-        }
-
-        return list;
-    }, [currentWorkspace, project, task, user]);
 
     const renderCommentContent = (text) => {
         if (!text) return null;
