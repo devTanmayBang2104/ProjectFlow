@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Mention from "@tiptap/extension-mention";
-import { Send, CornerDownLeft } from "lucide-react";
+import React, { useState, useRef, useMemo } from "react";
+import { Send, CornerDownLeft, AtSign } from "lucide-react";
 
 /**
- * Tiptap Rich-Text Comment Editor with @Mentions support.
+ * Robust Comment & Reply Editor with Native Textarea & Live @Mentions Autocomplete.
+ * Allows instant typing and posting of plain comments WITHOUT requiring mentions.
+ * Typing '@' triggers a floating suggestions dropdown of actual project & workspace members.
  */
 export default function CommentEditor({
   onSubmit,
@@ -15,103 +14,101 @@ export default function CommentEditor({
   replyingTo = null,
   onCancelReply = null,
 }) {
-  const [suggestionList, setSuggestionList] = useState([]);
-  const [mentionPosition, setMentionPosition] = useState(null);
+  const [content, setContent] = useState("");
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [showMentions, setShowMentions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const mentionCommandRef = useRef(null);
+  const textareaRef = useRef(null);
 
-  // Filter members list based on query
-  const searchMembers = (query) => {
-    const q = (query || "").toLowerCase();
+  // Filter members list based on query typed after '@'
+  const filteredMembers = useMemo(() => {
+    if (!mentionQuery) return members.slice(0, 6);
+    const q = mentionQuery.toLowerCase();
     return members
       .filter(
         (m) =>
-          m.name.toLowerCase().includes(q) ||
+          (m.name && m.name.toLowerCase().includes(q)) ||
           (m.username && m.username.toLowerCase().includes(q)) ||
-          m.email.toLowerCase().includes(q)
+          (m.email && m.email.toLowerCase().includes(q))
       )
-      .slice(0, 5);
+      .slice(0, 6);
+  }, [members, mentionQuery]);
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setContent(val);
+
+    const cursorPos = e.target.selectionStart;
+    const textBeforeCursor = val.slice(0, cursorPos);
+    const lastAtMatch = textBeforeCursor.match(/@([a-zA-Z0-9._-]*)$/);
+
+    if (lastAtMatch) {
+      setMentionQuery(lastAtMatch[1]);
+      setShowMentions(true);
+      setSelectedIndex(0);
+    } else {
+      setShowMentions(false);
+    }
   };
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: false,
-        codeBlock: false,
-      }),
-      Mention.configure({
-        HTMLAttributes: {
-          class:
-            "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 font-semibold px-1.5 py-0.5 rounded text-xs inline-block",
-        },
-        suggestion: {
-          items: ({ query }) => searchMembers(query),
-          render: () => ({
-            onStart: (props) => {
-              mentionCommandRef.current = props.command;
-              setSuggestionList(props.items);
-              setSelectedIndex(0);
-              const rect = props.clientRect?.();
-              if (rect) {
-                setMentionPosition({
-                  top: rect.top - 160,
-                  left: rect.left,
-                });
-              }
-            },
-            onUpdate: (props) => {
-              mentionCommandRef.current = props.command;
-              setSuggestionList(props.items);
-              setSelectedIndex(0);
-            },
-            onKeyDown: (props) => {
-              if (props.event.key === "ArrowDown") {
-                setSelectedIndex((prev) => (prev + 1) % (suggestionList.length || 1));
-                return true;
-              }
-              if (props.event.key === "ArrowUp") {
-                setSelectedIndex(
-                  (prev) => (prev - 1 + (suggestionList.length || 1)) % (suggestionList.length || 1)
-                );
-                return true;
-              }
-              if (props.event.key === "Enter" || props.event.key === "Tab") {
-                const target = suggestionList[selectedIndex];
-                if (target && mentionCommandRef.current) {
-                  mentionCommandRef.current({ id: target.id, label: target.name });
-                  setMentionPosition(null);
-                  return true;
-                }
-              }
-              if (props.event.key === "Escape") {
-                setMentionPosition(null);
-                return true;
-              }
-              return false;
-            },
-            onExit: () => {
-              setMentionPosition(null);
-              setSuggestionList([]);
-            },
-          }),
-        },
-      }),
-    ],
-    editorProps: {
-      attributes: {
-        class:
-          "min-h-[70px] max-h-40 overflow-y-auto px-3 py-2 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-0",
-      },
-    },
-  });
+  const insertMention = (member) => {
+    if (!textareaRef.current) return;
+    const cursorPos = textareaRef.current.selectionStart;
+    const textBeforeCursor = content.slice(0, cursorPos);
+    const textAfterCursor = content.slice(cursorPos);
+
+    // Replace the '@query' before the cursor with '@[Name]' or '@username'
+    const mentionTag = `@${member.username || member.name.replace(/\s+/g, "")} `;
+    const newTextBefore = textBeforeCursor.replace(/@([a-zA-Z0-9._-]*)$/, mentionTag);
+
+    const newContent = newTextBefore + textAfterCursor;
+    setContent(newContent);
+    setShowMentions(false);
+
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const nextPos = newTextBefore.length;
+        textareaRef.current.setSelectionRange(nextPos, nextPos);
+      }
+    }, 0);
+  };
+
+  const handleKeyDown = (e) => {
+    if (showMentions && filteredMembers.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev + 1) % filteredMembers.length);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev - 1 + filteredMembers.length) % filteredMembers.length);
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        insertMention(filteredMembers[selectedIndex]);
+        return;
+      }
+      if (e.key === "Escape") {
+        setShowMentions(false);
+        return;
+      }
+    }
+
+    // Ctrl+Enter or Cmd+Enter to submit
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
 
   const handleSubmit = () => {
-    if (!editor || editor.isEmpty) return;
-    const textContent = editor.getText();
-    if (!textContent.trim()) return;
-
-    onSubmit(textContent);
-    editor.commands.clearContent();
+    if (!content.trim() || isSubmitting) return;
+    onSubmit(content.trim());
+    setContent("");
+    setShowMentions(false);
   };
 
   return (
@@ -127,6 +124,7 @@ export default function CommentEditor({
           </div>
           {onCancelReply && (
             <button
+              type="button"
               onClick={onCancelReply}
               className="text-xs hover:underline text-blue-600 dark:text-blue-400 font-medium cursor-pointer"
             >
@@ -136,67 +134,87 @@ export default function CommentEditor({
         </div>
       )}
 
-      {/* Editor Content */}
-      <EditorContent editor={editor} placeholder={placeholder} />
+      {/* Direct Native Input Textarea */}
+      <textarea
+        ref={textareaRef}
+        value={content}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        rows={2}
+        className="w-full bg-transparent px-3 py-2.5 text-sm text-gray-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none"
+      />
 
       {/* Action Footer */}
       <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 rounded-b-lg">
-        <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
-          Tip: Type <kbd className="px-1 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-[10px] font-mono">@</kbd> to mention
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-zinc-400 dark:text-zinc-500 flex items-center gap-1">
+            <AtSign className="size-3" /> Type <kbd className="px-1 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-[10px] font-mono">@</kbd> to mention
+          </span>
+          <span className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:inline">
+            • <kbd className="px-1 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-[10px] font-mono">Ctrl+Enter</kbd> to post
+          </span>
+        </div>
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!editor || editor.isEmpty || isSubmitting}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-sm"
+          disabled={!content.trim() || isSubmitting}
+          className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-sm"
         >
           <Send className="size-3" />
           <span>{replyingTo ? "Reply" : "Post"}</span>
         </button>
       </div>
 
-      {/* @Mention Floating Autocomplete Popup */}
-      {mentionPosition && suggestionList.length > 0 && (
+      {/* Floating Mentions Autocomplete Box */}
+      {showMentions && filteredMembers.length > 0 && (
         <div
-          className="absolute z-50 w-56 rounded-lg bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 shadow-xl overflow-hidden py-1"
-          style={{ bottom: "100%", left: 8 }}
+          className="absolute z-50 w-64 rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 shadow-2xl overflow-hidden py-1.5"
+          style={{ bottom: "100%", left: 8, marginBottom: 8 }}
         >
-          <div className="px-2.5 py-1 text-[10px] font-semibold uppercase text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
-            Teammates
+          <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+            <span>Project & Team Members</span>
+            <span>{filteredMembers.length} found</span>
           </div>
-          {suggestionList.map((member, idx) => (
-            <button
-              key={member.id}
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                if (mentionCommandRef.current) {
-                  mentionCommandRef.current({ id: member.id, label: member.name });
-                  setMentionPosition(null);
-                }
-              }}
-              className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left cursor-pointer transition-colors ${
-                idx === selectedIndex
-                  ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold"
-                  : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              }`}
-            >
-              <img
-                src={
-                  member.image ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random`
-                }
-                alt={member.name}
-                className="size-5 rounded-full object-cover"
-              />
-              <div className="truncate">
-                <span className="block truncate">{member.name}</span>
-                {member.email && (
-                  <span className="block text-[10px] text-zinc-400 truncate">{member.email}</span>
-                )}
-              </div>
-            </button>
-          ))}
+          <div className="max-h-48 overflow-y-auto">
+            {filteredMembers.map((member, idx) => (
+              <button
+                key={member.id}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault(); // prevent losing textarea focus
+                  insertMention(member);
+                }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs text-left cursor-pointer transition-colors ${
+                  idx === selectedIndex
+                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold"
+                    : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                }`}
+              >
+                <img
+                  src={
+                    member.image ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || "Member")}&background=random`
+                  }
+                  alt={member.name}
+                  className="size-6 rounded-full object-cover flex-shrink-0"
+                />
+                <div className="truncate min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold truncate text-zinc-800 dark:text-zinc-100">
+                      {member.name}
+                    </span>
+                    {member.username && (
+                      <span className="text-[10px] text-zinc-400 font-mono">@{member.username}</span>
+                    )}
+                  </div>
+                  {member.email && (
+                    <span className="block text-[10px] text-zinc-400 truncate">{member.email}</span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

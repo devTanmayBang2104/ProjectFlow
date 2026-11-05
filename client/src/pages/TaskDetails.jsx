@@ -376,13 +376,25 @@ const TaskDetails = () => {
                             onSubmit={handleAddComment}
                             isSubmitting={addCommentMutation.isPending}
                             members={
-                                project?.workspace?.members?.map((m) => ({
-                                    id: m.user?.id || m.userId,
-                                    name: m.user?.name || "Teammate",
-                                    username: m.user?.username || "",
-                                    email: m.user?.email || "",
-                                    image: m.user?.image || "",
-                                })) || []
+                                (() => {
+                                    const projectMembers = project?.members?.map((m) => m.user) || [];
+                                    const workspaceMembers = project?.workspace?.members?.map((m) => m.user) || [];
+                                    
+                                    // Merge members by user ID to avoid duplicates
+                                    const memberMap = new Map();
+                                    [...workspaceMembers, ...projectMembers].forEach((u) => {
+                                        if (u && u.id && !memberMap.has(u.id)) {
+                                            memberMap.set(u.id, {
+                                                id: u.id,
+                                                name: u.name || "Member",
+                                                username: u.username || "",
+                                                email: u.email || "",
+                                                image: u.image || "",
+                                            });
+                                        }
+                                    });
+                                    return Array.from(memberMap.values());
+                                })()
                             }
                             replyingTo={replyingTo}
                             onCancelReply={() => setReplyingTo(null)}

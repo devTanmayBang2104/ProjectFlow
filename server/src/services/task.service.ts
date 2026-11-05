@@ -135,11 +135,35 @@ export class TaskService {
             team_lead: true,
             workspace: {
               select: {
+                id: true,
                 ownerId: true,
                 members: {
                   select: {
                     userId: true,
                     role: true,
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        email: true,
+                        image: true,
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            members: {
+              select: {
+                userId: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    email: true,
+                    image: true,
                   }
                 }
               }
