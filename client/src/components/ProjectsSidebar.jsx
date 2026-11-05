@@ -33,10 +33,12 @@ const ProjectSidebar = () => {
                 <h3 className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
                     Projects
                 </h3>
-                <Link to="/projects">
-                    <button className="size-5 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 rounded flex items-center justify-center transition-colors duration-200">
-                        <ArrowRightIcon className="size-3" />
-                    </button>
+                <Link
+                    to="/projects"
+                    className="size-5 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 rounded flex items-center justify-center transition-colors duration-200 cursor-pointer"
+                    title="View all projects"
+                >
+                    <ArrowRightIcon className="size-3" />
                 </Link>
             </div>
 
